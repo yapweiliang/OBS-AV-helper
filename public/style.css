@@ -1,0 +1,59 @@
+body {
+
+    font-family: sans-serif;
+    margin: 20px;
+}
+
+#buttons {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(200px, 1fr)
+        );
+
+    gap: 10px;
+}
+
+.control-button {
+
+    font-size: 1.1rem;
+
+    padding: 20px;
+
+    cursor: pointer;
+}
+
+.flash {
+
+    outline: 4px solid green;
+}
+
+.hidden {
+
+    display: none;
+}
+
+#confirmDialog {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0,0,0,0.5);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+}
+
+.dialog {
+
+    background: white;
+
+    padding: 20px;
+}
