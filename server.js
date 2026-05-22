@@ -13,11 +13,7 @@ const wss = new WebSocket.Server({ server });
 app.use(express.static("public"));
 
 app.get("/api/config", (req, res) => {
-
-    res.json({
-        buttons: config.buttons
-    });
-
+    res.json({ buttons: config.buttons });
 });
 
 wss.on("connection", (ws) => {
@@ -38,7 +34,8 @@ wss.on("connection", (ws) => {
                 return;
             }
 
-            await actions.execute(button);
+            //await actions.execute(button);
+            await actions.execute(data.buttonId);
 
             ws.send(JSON.stringify({
                 type: "actionComplete",
