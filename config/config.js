@@ -1,9 +1,10 @@
 module.exports = {
-
+// TODO: readonly indicators as well, e.g. other mute states, or selected fader levels
     x32: {
 
         //host: "192.168.22.138",
-        host: "192.168.56.1",
+        //host: "192.168.56.1",
+        host: "192.168.32.11",
         port: 10023,
         localPort: 10024,
 
@@ -53,9 +54,25 @@ module.exports = {
                 address: "/config/mute/6",
                 invertState: false,
                 poll: true
+            },
+
+            testIndicator: {
+                type: "indicator",
+                address: "/config/mute/5",
+                invertState: false,
+                poll: false // true, but lets keep this silent for now
             }
         }
     },
+
+    indicators: [
+
+        {
+            id: indTestTest,
+            label: "Test Indicator",
+            action: "testIndicator"
+        }
+    ],
 
     buttons: [
 
