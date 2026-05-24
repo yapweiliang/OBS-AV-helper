@@ -1,174 +1,87 @@
-let socket;
-
-let buttons = [];
-
-let pendingButton = null;
+let CONFIG = null;
 
 async function initialise() {
+
+    console.log("Loading config...");
 
     const response =
         await fetch("/api/config");
 
-    const config =
-        await response.json();
-
-    buttons = config.buttons;
-
-    createButtons();
-
-    connectWebSocket();
-}
-
-function connectWebSocket() {
-
-    socket =
-        new WebSocket(
-            `ws://${location.host}`
-        );
-
-    socket.addEventListener(
-        "message",
-        onMessage
-    );
-}
-
-function onMessage(event) {
-
-    const data =
-        JSON.parse(event.data);
-
-    if (
-        data.type ===
-        "actionComplete"
-    ) {
-
-        flashButton(
-            data.buttonId
-        );
+    if (!response.ok) {
+        throw new Error("Failed to load config");
     }
+
+    CONFIG = await response.json();
+
+    renderButtons();
 }
 
-function createButtons() {
+function renderButtons() {
 
     const container =
-        document.getElementById(
-            "buttons"
-        );
+        document.getElementById("buttons");
 
-    buttons.forEach(button => {
+    container.innerHTML = "";
 
-        const element =
-            document.createElement(
-                "button"
+    for (const btn of CONFIG.buttons) {
+
+        const button =
+            document.createElement("button");
+
+        button.id = btn.id;
+        button.textContent = btn.label;
+
+        button.onclick = () => {
+
+            handleButton(btn);
+        };
+
+        container.appendChild(button);
+    }
+}
+
+async function handleButton(btn) {
+
+    console.log("Pressed:", btn.action);
+
+    try {
+
+        const response =
+            await fetch(
+                `/action/${btn.action}`,
+                { method: "POST" }
             );
 
-        element.id =
-            button.id;
+        const result =
+            await response.json();
 
-        element.className =
-            "control-button";
+        console.log("Result:", result);
 
-        element.textContent =
-            button.label;
+        // simple visual feedback
+        flashButton(btn.id);
 
-        element.addEventListener(
-            "click",
-            () => onButtonClick(button)
+    } catch (err) {
+
+        console.error(
+            "Action failed:",
+            err
         );
-
-        container.appendChild(
-            element
-        );
-    });
-}
-
-function onButtonClick(button) {
-
-    if (button.confirm) {
-
-        pendingButton = button;
-
-        showConfirm();
-
-        return;
     }
-
-    sendAction(button);
 }
 
-function sendAction(button) {
+function flashButton(id) {
 
-    socket.send(
-        JSON.stringify({
-            type: "action",
-            buttonId: button.id
-        })
-    );
-}
+    const el =
+        document.getElementById(id);
 
-function flashButton(buttonId) {
+    if (!el) return;
 
-    const button =
-        document.getElementById(
-            buttonId
-        );
-
-    button.classList.add(
-        "flash"
-    );
+    el.style.opacity = 0.4;
 
     setTimeout(() => {
-
-        button.classList.remove(
-            "flash"
-        );
-
-    }, 3000);
+        el.style.opacity = 1;
+    }, 300);
 }
 
-function showConfirm() {
-
-    document
-        .getElementById(
-            "confirmDialog"
-        )
-        .classList
-        .remove("hidden");
-}
-
-function hideConfirm() {
-
-    document
-        .getElementById(
-            "confirmDialog"
-        )
-        .classList
-        .add("hidden");
-}
-
-document
-    .getElementById(
-        "confirmYes"
-    )
-    .addEventListener(
-        "click",
-        () => {
-
-            sendAction(
-                pendingButton
-            );
-
-            hideConfirm();
-        }
-    );
-
-document
-    .getElementById(
-        "confirmNo"
-    )
-    .addEventListener(
-        "click",
-        hideConfirm
-    );
-
+// start
 initialise();

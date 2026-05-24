@@ -57,3 +57,17 @@ body {
 
     padding: 20px;
 }
+
+#statusPanel {
+
+    margin-bottom: 20px;
+
+    padding: 10px;
+
+    border: 1px solid #ccc;
+}
+
+#statusPanel div {
+
+    margin: 5px 0;
+}

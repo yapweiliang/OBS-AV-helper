@@ -1,101 +1,111 @@
 module.exports = {
 
     x32: {
-        host: "192.168.1.100",
-        port: 10023
-    },
 
-    obs: {
-        host: "localhost",
-        port: 4455,
-        password: ""
+        //host: "192.168.22.138",
+        host: "192.168.56.1",
+        port: 10023,
+        localPort: 10024,
+
+        pollIntervalMs: 10000,
+
+        actions: {
+
+            initialise: {
+                type: "snippet",
+                snippet: 10
+            },
+
+            lecternOn: {
+                type: "snippet",
+                snippet: 13
+            },
+
+            lecternLouder: {
+                type: "snippet",
+                snippet: 16
+            },
+
+            bandSinging: {
+                type: "snippet",
+                snippet: 11
+            },
+
+            bandSpeaking: {
+                type: "snippet",
+                snippet: 15
+            },
+
+            bandSpeakLouder: {
+                type: "snippet",
+                snippet: 12
+            },
+
+            muteSpeech: {
+                type: "toggle",
+                address: "/dca/5/on",
+                invertState: true,
+                poll: true
+            },
+
+            muteBand: {
+                type: "toggle",
+                address: "/config/mute/6",
+                invertState: false,
+                poll: true
+            }
+        }
     },
 
     buttons: [
 
         {
-            id: "initialise",
+            id: "btnInitialise",
             label: "Initialise",
+            action: "initialise",
             confirm: true
         },
 
         {
-            id: "lecternOn",
-            label: "Lectern On"
+            id: "btnLecternOn",
+            label: "Lectern On",
+            action: "lecternOn"
         },
 
         {
-            id: "lecternLouder",
-            label: "Lectern Louder"
+            id: "btnLecternLouder",
+            label: "Lectern Louder",
+            action: "lecternLouder"
         },
 
         {
-            id: "bandSinging",
-            label: "Band Singing"
+            id: "btnBandSinging",
+            label: "Band Singing",
+            action: "bandSinging"
         },
 
         {
-            id: "bandSpeaking",
-            label: "Band Speaking"
+            id: "btnBandSpeaking",
+            label: "Band Speaking",
+            action: "bandSpeaking"
         },
 
         {
-            id: "bandSpeakLouder",
-            label: "Band Speak Louder"
+            id: "btnBandSpeakLouder",
+            label: "Band Speak Louder",
+            action: "bandSpeakLouder"
         },
 
         {
-            id: "muteSpeech",
-            label: "Mute Speech"
+            id: "btnMuteSpeech",
+            label: "Mute Speech",
+            action: "muteSpeech"
         },
 
         {
-            id: "muteBand",
-            label: "Mute Band"
+            id: "btnMuteBand",
+            label: "Mute Band",
+            action: "muteBand"
         }
-    ],
-
-    actions: {
-
-        initialise: {
-            type: "snippet",
-            snippet: 10
-        },
-
-        lecternOn: {
-            type: "snippet",
-            snippet: 13
-            // obsScene: "Speaker"
-        },
-
-        lecternLouder: {
-            type: "snippet",
-            snippet: 16
-        },
-
-        bandSinging: {
-            type: "snippet",
-            snippet: 11
-        },
-
-        bandSpeaking: {
-            type: "snippet",
-            snippet: 15
-        },
-
-        bandSpeakLouder: {
-            type: "snippet",
-            snippet: 12
-        },
-
-        muteSpeech: {
-            type: "toggleMute",
-            address: "/dca/5/on"
-        },
-
-        muteBand: {
-            type: "toggleMute",
-            address: "/config/mute/6"
-        }
-    }
+    ]
 };
