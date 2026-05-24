@@ -10,13 +10,13 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+const DEBUG_PREFIX = "node server.js: ";
+
 // ----------------------------------------------------
 // Middleware
 // ----------------------------------------------------
 
 app.use(express.json());
-
-// IMPORTANT: serve frontend correctly
 app.use(express.static(path.join(__dirname, "public")));
 
 // ----------------------------------------------------
@@ -32,9 +32,7 @@ x32.connect();
 
 app.get("/api/config", (req, res) => {
 
-    res.json({
-        buttons: config.buttons
-    });
+    res.json({ buttons: config.buttons });
 });
 
 // ----------------------------------------------------
@@ -43,34 +41,21 @@ app.get("/api/config", (req, res) => {
 
 app.post("/action/:name", (req, res) => {
 
-    const actionName =
-        req.params.name;
+    const actionName = req.params.name;
 
-    console.log(
-        "ACTION:",
-        actionName
-    );
+    console.log( DEBUG_PREFIX, "ACTION:", actionName );
 
     try {
 
         x32.executeAction(actionName);
 
-        res.json({
-            ok: true,
-            action: actionName
-        });
+        res.json({ ok: true, action: actionName });
 
     } catch (err) {
 
-        console.error(
-            "Action error:",
-            err
-        );
+        console.error( DEBUG_PREFIX, "Action error:", err );
 
-        res.status(500).json({
-            ok: false,
-            error: err.message
-        });
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 
@@ -80,16 +65,10 @@ app.post("/action/:name", (req, res) => {
 
 function broadcast(obj) {
 
-    const msg =
-        JSON.stringify(obj);
+    const msg = JSON.stringify(obj);
 
     wss.clients.forEach(client => {
-
-        if (
-            client.readyState === WebSocket.OPEN
-        ) {
-            client.send(msg);
-        }
+        if ( client.readyState === WebSocket.OPEN ) { client.send(msg); }
     });
 }
 
@@ -99,7 +78,7 @@ function broadcast(obj) {
 
 wss.on("connection", ws => {
 
-    console.log("Browser connected");
+    console.log(DEBUG_PREFIX, "Browser connected");
 
     ws.send(JSON.stringify({
         type: "state",
@@ -127,8 +106,5 @@ x32.on("stateChanged", state => {
 // ----------------------------------------------------
 
 server.listen(3000, () => {
-
-    console.log(
-        "Listening on http://localhost:3000"
-    );
+    console.log(DEBUG_PREFIX, "Listening on http://localhost:3000");
 });
