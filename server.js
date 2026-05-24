@@ -32,7 +32,9 @@ x32.connect();
 
 app.get("/api/config", (req, res) => {
 
-    res.json({ buttons: config.buttons });
+    //res.json(config); // also exposes x32
+    res.json({ ui: config.ui }) // will keep same structure
+    // res.json({ config.ui }) will need some rewriting in server.js
 });
 
 // ----------------------------------------------------
@@ -41,15 +43,15 @@ app.get("/api/config", (req, res) => {
 
 app.post("/action/:name", (req, res) => {
 
-    const actionName = req.params.name;
+    const signalId = req.params.name;
 
-    console.log( DEBUG_PREFIX, "ACTION:", actionName );
+    console.log( DEBUG_PREFIX, "ACTION:", signalId );
 
     try {
 
-        x32.executeAction(actionName);
+        x32.executeAction(signalId);
 
-        res.json({ ok: true, action: actionName });
+        res.json({ ok: true, action: signalId });
 
     } catch (err) {
 

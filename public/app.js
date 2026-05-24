@@ -9,9 +9,7 @@ let socket = null;
 async function initialise() {
 
     CONFIG = await loadConfig();
-
-    renderButtons();
-
+    renderUI();
     initWebSocket();
 }
 
@@ -22,11 +20,9 @@ async function initialise() {
 async function loadConfig() {
 
     const res = await fetch("/api/config");
-
     if (!res.ok) {
         throw new Error("Config load failed");
     }
-
     return await res.json();
 }
 
@@ -39,21 +35,27 @@ function initWebSocket() {
     socket = new WebSocket(`ws://${window.location.host}`);
 
     socket.onmessage = (event) => {
-
         const msg = JSON.parse(event.data);
-
-        switch (msg.type) {
-
-            case "state":
-                STATE = msg.state;
-                renderState();
-                break;
+        if (msg.type === "state") {
+            STATE = msg.state;
+            updateUI();
         }
     };
 }
 
 // ----------------------------------------------------
-// UI RENDER
+// RENDER UI
+// ----------------------------------------------------
+
+function renderUI() {
+
+    renderButtons();
+    renderIndicators();
+    renderFaders();
+}
+
+// ----------------------------------------------------
+// BUTTONS
 // ----------------------------------------------------
 
 function renderButtons() {
@@ -61,41 +63,142 @@ function renderButtons() {
     const container = document.getElementById("buttons");
     container.innerHTML = "";
 
-    for (const btn of CONFIG.buttons) {
+    for (const btn of CONFIG.ui.buttons) {
 
         const el = document.createElement("button");
 
         el.id = btn.id;
         el.textContent = btn.label;
-
-        el.onclick = () => trigger(btn);
+        el.onclick = () => triggerAction(btn.signalId);
 
         container.appendChild(el);
     }
 }
 
 // ----------------------------------------------------
-// STATE → UI BINDING
+// INDICATORS
 // ----------------------------------------------------
 
-function renderState() {
+function renderIndicators() {
 
-    for (const btn of CONFIG.buttons) {
+    const container = document.getElementById("buttons"); // same grid for now
 
-        const el = document.getElementById(btn.id);
-        if (!el) continue;
+    for (const ind of CONFIG.ui.indicators) {
 
-        const value = STATE[btn.action];
+        const el = document.createElement("div");
 
-        applyToggleState(el, value);
+        el.id = ind.id;
+        el.className = "indicator";
+        el.innerHTML = `
+            ${ind.label}
+            <span class="label">value</span>
+        `;
+
+        container.appendChild(el);
     }
 }
 
 // ----------------------------------------------------
-// UI STATE RULES (centralised)
+// FADERS
 // ----------------------------------------------------
 
-function applyToggleState(el, value) {
+function renderFaders() {
+
+    const container = document.getElementById("buttons"); // same grid for now
+
+    for (const fdr of CONFIG.ui.faders) {
+
+        const el = document.createElement("div");
+
+        el.id = fdr.id;
+        el.className = "fader";
+        el.innerHTML = `
+            ${fdr.label}
+            <span class="label">value</span>
+        `;
+
+        container.appendChild(el);
+    }
+}
+
+// ----------------------------------------------------
+// ACTIONS
+// ----------------------------------------------------
+
+async function triggerAction(signalId) {
+    try {
+        await fetch(`/action/${signalId}`, { method: "POST" });
+        flash(signalId);
+    } catch (err) {
+        console.error("Action failed:", err);
+    }
+}
+
+// ----------------------------------------------------
+// UI UPDATE (CORE BINDING)
+// ----------------------------------------------------
+
+function updateUI() {
+    updateButtons();
+    updateIndicators();
+    updateFaders();
+}
+
+// ----------------------------------------------------
+// BUTTON STATE
+// ----------------------------------------------------
+
+function updateButtons() {
+
+    for (const btn of CONFIG.ui.buttons) {
+
+        const el = document.getElementById(btn.id);
+        if (!el) continue;
+
+        const value = STATE[btn.signalId];
+        applyBooleanStyle(el, value);
+    }
+}
+
+// ----------------------------------------------------
+// INDICATOR STATE
+// ----------------------------------------------------
+
+function updateIndicators() {
+
+    for (const ind of CONFIG.ui.indicators) {
+
+        const el = document.getElementById(ind.id);
+        if (!el) continue;
+
+        const value = STATE[ind.signalId];
+        el.querySelector(".label").textContent = value;
+        applyIndicatorStyle(el, value);
+    }
+}
+
+// ----------------------------------------------------
+// FADER STATE
+// ----------------------------------------------------
+
+function updateFaders() {
+    
+    for (const fdr of CONFIG.ui.faders) {
+
+        const el = document.getElementById(fdr.id);
+        if (!el) continue;
+
+        const value = STATE[fdr.signalId];
+        // TODO convert value to dB
+        el.querySelector(".label").textContent = value;
+    }
+}
+
+// ----------------------------------------------------
+// STYLE HELPERS
+// ----------------------------------------------------
+
+function applyBooleanStyle(el, value) {
 
     if (value === true) {
 
@@ -113,33 +216,37 @@ function applyToggleState(el, value) {
     }
 }
 
-// ----------------------------------------------------
-// ACTIONS
-// ----------------------------------------------------
+// indicator uses same logic for now (can diverge later)
+function applyIndicatorStyle(el, value) {
 
-async function trigger(btn) {
+    if (value === true) {
 
-    try {
+        el.style.background = "#4caf50";
+        el.style.color = "white";
 
-        await fetch(`/action/${btn.action}`, {
-            method: "POST"
-        });
+    } else if (value === false) {
 
-        flashButton(btn.id);
+        el.style.background = "#ccc";
+        el.style.color = "black";
 
-    } catch (err) {
+    } else {
 
-        console.error(err);
+        el.style.background = "";
+        el.style.color = "";
     }
 }
 
 // ----------------------------------------------------
-// VISUAL FEEDBACK
+// FLASH
 // ----------------------------------------------------
 
-function flashButton(id) {
+function flash(signalId) {
 
-    const el = document.getElementById(id);
+    const btn = CONFIG.ui.buttons.find(b => b.signalId === signalId);
+
+    if (!btn) return;
+
+    const el = document.getElementById(btn.id);
 
     if (!el) return;
 
