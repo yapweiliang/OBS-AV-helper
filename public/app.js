@@ -2,53 +2,58 @@ let CONFIG = null;
 let STATE = {};
 let socket = null;
 
+// ----------------------------------------------------
+// INIT
+// ----------------------------------------------------
+
 async function initialise() {
 
-    console.log("Loading config...");
-
-    const response = await fetch("/api/config");
-
-    if (!response.ok) {
-        throw new Error("Failed to load config");
-    }
-
-    CONFIG = await response.json();
+    CONFIG = await loadConfig();
 
     renderButtons();
+
     initWebSocket();
 }
 
 // ----------------------------------------------------
-// WebSocket
+// CONFIG
+// ----------------------------------------------------
+
+async function loadConfig() {
+
+    const res = await fetch("/api/config");
+
+    if (!res.ok) {
+        throw new Error("Config load failed");
+    }
+
+    return await res.json();
+}
+
+// ----------------------------------------------------
+// WEBSOCKET
 // ----------------------------------------------------
 
 function initWebSocket() {
 
     socket = new WebSocket(`ws://${window.location.host}`);
 
-    socket.onopen = () => {
-        console.log("WebSocket connected");
-    };
-
     socket.onmessage = (event) => {
 
         const msg = JSON.parse(event.data);
 
-        if (msg.type === "state") {
+        switch (msg.type) {
 
-            STATE = msg.state;
-
-            updateButtons();
+            case "state":
+                STATE = msg.state;
+                renderState();
+                break;
         }
-    };
-
-    socket.onclose = () => {
-        console.log("WebSocket disconnected");
     };
 }
 
 // ----------------------------------------------------
-// UI render
+// UI RENDER
 // ----------------------------------------------------
 
 function renderButtons() {
@@ -58,22 +63,22 @@ function renderButtons() {
 
     for (const btn of CONFIG.buttons) {
 
-        const button = document.createElement("button");
+        const el = document.createElement("button");
 
-        button.id = btn.id;
-        button.textContent = btn.label;
+        el.id = btn.id;
+        el.textContent = btn.label;
 
-        button.onclick = () => handleButton(btn);
+        el.onclick = () => trigger(btn);
 
-        container.appendChild(button);
+        container.appendChild(el);
     }
 }
 
 // ----------------------------------------------------
-// UI update (NEW)
+// STATE → UI BINDING
 // ----------------------------------------------------
 
-function updateButtons() {
+function renderState() {
 
     for (const btn of CONFIG.buttons) {
 
@@ -82,53 +87,60 @@ function updateButtons() {
 
         const value = STATE[btn.action];
 
-        if (value === true) {
-            el.classList.add("toggle-on");
-            el.classList.remove("toggle-off");
-        } else if (value === false) {
-            el.classList.add("toggle-off");
-            el.classList.remove("toggle-on");
-        } else {
-            el.classList.remove("toggle-on");
-            el.classList.remove("toggle-off");
-        }
+        applyToggleState(el, value);
     }
 }
 
 // ----------------------------------------------------
-// Actions
+// UI STATE RULES (centralised)
 // ----------------------------------------------------
 
-async function handleButton(btn) {
+function applyToggleState(el, value) {
 
-    console.log("Pressed:", btn.action);
+    if (value === true) {
+
+        el.classList.add("toggle-on");
+        el.classList.remove("toggle-off");
+
+    } else if (value === false) {
+
+        el.classList.add("toggle-off");
+        el.classList.remove("toggle-on");
+
+    } else {
+
+        el.classList.remove("toggle-on", "toggle-off");
+    }
+}
+
+// ----------------------------------------------------
+// ACTIONS
+// ----------------------------------------------------
+
+async function trigger(btn) {
 
     try {
 
-        const response = await fetch(
-            `/action/${btn.action}`,
-            { method: "POST" }
-        );
-
-        const result = await response.json();
-
-        console.log("Result:", result);
+        await fetch(`/action/${btn.action}`, {
+            method: "POST"
+        });
 
         flashButton(btn.id);
 
     } catch (err) {
 
-        console.error("Action failed:", err);
+        console.error(err);
     }
 }
 
 // ----------------------------------------------------
-// Flash feedback (unchanged)
+// VISUAL FEEDBACK
 // ----------------------------------------------------
 
 function flashButton(id) {
 
     const el = document.getElementById(id);
+
     if (!el) return;
 
     el.style.opacity = 0.4;
@@ -139,7 +151,7 @@ function flashButton(id) {
 }
 
 // ----------------------------------------------------
-// start
+// START
 // ----------------------------------------------------
 
 initialise();
