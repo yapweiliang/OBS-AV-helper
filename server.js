@@ -13,9 +13,6 @@ const wss = new WebSocket.Server({ server });
 const DEBUG_PREFIX = "node server.js: ";
 const LISTEN_PORT = 3000;
 
-let x32StateMayBeStale = null;
-const DECLARE_X32_STALE_THRESHOLD = 3; // after how many poll cycles (each = 10s) to declare
-
 // ----------------------------------------------------
 // Middleware
 // ----------------------------------------------------
@@ -98,14 +95,7 @@ x32.on("loadSuccess", state => {
 
 x32.on("heartbeatsMissed", state => {
     broadcastToBrowsers({ type: "x32HeartbeatsMissed", state });
-    if (state > DECLARE_X32_STALE_THRESHOLD) {
-        broadcastToBrowsers({ type: "x32StateChanged", state: {} });
-        x32StateMayBeStale = true;
-    }
-    if (state === 0 && x32StateMayBeStale) {
-        x32StateMayBeStale = false;
-        broadcastToBrowsers({ type: "x32StateChanged", state: x32.getState() });
-    }
+    // stale state logic should be in x32.js not here
 });
 
 
