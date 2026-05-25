@@ -11,6 +11,10 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const DEBUG_PREFIX = "node server.js: ";
+const LISTEN_PORT = 3000;
+
+let x32StateMayBeStale = null;
+const DECLARE_X32_STALE_THRESHOLD = 3; // after how many poll cycles (each = 10s) to declare
 
 // ----------------------------------------------------
 // Middleware
@@ -41,22 +45,18 @@ app.get("/api/config", (req, res) => {
 // API: actions (core of system)
 // ----------------------------------------------------
 
-app.post("/action/:name", (req, res) => {
+app.post("/x32/action/:name", (req, res) => {
+    // POST received from public/app.js
 
     const signalId = req.params.name;
-
     console.log( DEBUG_PREFIX, "ACTION:", signalId );
 
     try {
-
         x32.executeAction(signalId);
-
         res.json({ ok: true, action: signalId });
 
     } catch (err) {
-
         console.error( DEBUG_PREFIX, "Action error:", err );
-
         res.status(500).json({ ok: false, error: err.message });
     }
 });
@@ -65,7 +65,7 @@ app.post("/action/:name", (req, res) => {
 // WebSocket: push state to browser
 // ----------------------------------------------------
 
-function broadcast(obj) {
+function broadcastToBrowsers(obj) {
 
     const msg = JSON.stringify(obj);
 
@@ -79,13 +79,9 @@ function broadcast(obj) {
 // ----------------------------------------------------
 
 wss.on("connection", ws => {
-
     console.log(DEBUG_PREFIX, "Browser connected");
-
-    ws.send(JSON.stringify({
-        type: "state",
-        state: x32.getState()
-    }));
+    ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
+    ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
 });
 
 // ----------------------------------------------------
@@ -93,20 +89,30 @@ wss.on("connection", ws => {
 // ----------------------------------------------------
 
 x32.on("stateChanged", state => {
-
-    broadcast({
-        type: "state",
-        state
-    });
+    broadcastToBrowsers({ type: "x32StateChanged", state });
 });
 
-// Optional later:
-// x32.on("loadResponse", ...)
+x32.on("loadSuccess", state => {
+    broadcastToBrowsers({ type: "x32LoadSuccess", state });
+});
+
+x32.on("heartbeatsMissed", state => {
+    broadcastToBrowsers({ type: "x32HeartbeatsMissed", state });
+    if (state > DECLARE_X32_STALE_THRESHOLD) {
+        broadcastToBrowsers({ type: "x32StateChanged", state: {} });
+        x32StateMayBeStale = true;
+    }
+    if (state === 0 && x32StateMayBeStale) {
+        x32StateMayBeStale = false;
+        broadcastToBrowsers({ type: "x32StateChanged", state: x32.getState() });
+    }
+});
+
 
 // ----------------------------------------------------
 // Start server
 // ----------------------------------------------------
 
-server.listen(3000, () => {
-    console.log(DEBUG_PREFIX, "Listening on http://localhost:3000");
+server.listen(LISTEN_PORT, () => {
+    console.log(DEBUG_PREFIX, `Listening on http://localhost:${LISTEN_PORT}`);
 });

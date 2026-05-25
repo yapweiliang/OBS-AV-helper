@@ -18,7 +18,7 @@
         }
 
         .toggle-on {
-            background: #4caf50;
+            background: red;
             color: white;
         }
 
@@ -30,9 +30,31 @@
 
 <body>
 
-    <h2>X32 Control Panel</h2>
+<div id="statusPanel">
+    <span id="serverStatus">Server: ?</span>
+    <span id="x32Status">X32: ?</span>
+    <span id="obsStatus">OBS: ?</span>
+</div>
+
+    <h2>Sound Control Panel</h2>
 
     <div id="buttons"></div>
+    <div id="indicators"></div>
+
+    <h2>OBS Control Panel</h2>
+    <button>Band Scene</button>
+    <button>Lectern Scene</button>
+    <button>Other Scene</button>
+    <button>Other Scene</button>
+    <button>Other Scene</button>
+    <button>Other Scene</button>
+    <button>Other Scene</button>
+    <button>(maybe Start/Stop stream)</button>
+
+    <h2>Camera Control Panel</h2>
+    <button>Set White Balance</button>
+    <button>OnePush Focus</button>
+    <button>(further buttons for adjusting then saving Preset positions)</button>
 
     <script src="app.js"></script>
 
