@@ -1,7 +1,7 @@
 module.exports = {
 
     obs: {
-        host: "localhost", // "ws://"
+        host: "localhost", // `ws://${host}`
         port: 4455,
         password: "6hzHSBJSkq7KvEOS",
 

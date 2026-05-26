@@ -5,6 +5,7 @@ const WebSocket = require("ws");
 
 const config = require("./config/config");
 const X32 = require("./lib/x32");
+const OBS = require("./lib/obs.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -21,11 +22,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ----------------------------------------------------
-// X32
+// X32 and OBS 
 // ----------------------------------------------------
 
 const x32 = new X32(config.x32);
 x32.connect();
+
+const obs = new OBS(config.obs);
+obs.connect();
 
 // ----------------------------------------------------
 // API: config
@@ -98,6 +102,13 @@ x32.on("heartbeatsMissed", state => {
     // stale state logic should be in x32.js not here
 });
 
+// ----------------------------------------------------
+// obs → browser state updates
+// ----------------------------------------------------
+
+// setCameraTallyColor
+// highlightCameraPreset
+// flashStatusText
 
 // ----------------------------------------------------
 // Start server

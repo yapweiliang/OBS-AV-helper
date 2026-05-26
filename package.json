@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "obs-websocket-js": "^5.0.8",
     "osc": "^2.4.5",
     "ws": "^8.18.0"
   }
