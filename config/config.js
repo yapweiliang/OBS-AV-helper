@@ -1,5 +1,35 @@
 module.exports = {
 
+    obs: {
+        host: "localhost", // "ws://"
+        port: 4455,
+        password: "6hzHSBJSkq7KvEOS",
+
+        PTZ_ACTION_DEVICE_ID: 3,
+
+        OVERLAY_SCENENAME: "---OVERLAY---",
+        PARENTS_OVERLAY_SOURCENAME: "parents_overlay",
+        CUSTOM_OVERLAY_SOURCENAME: "custom_overlay",
+        
+        DEFAULT_OVERLAY_TIMEOUT_SECONDS: 300
+    },
+
+    camera: {
+        host: "http://192.168.32.107", // "http://"
+
+        CAMERA_PRESETS: [
+            { PresetNumber: 2, PresetName: "Lectern" },
+            { PresetNumber: 3, PresetName: "w/Lead" },
+            { PresetNumber: 5, PresetName: "Band right" },
+            { PresetNumber: 6, PresetName: "Band full" },
+            { PresetNumber: 4, PresetName: "Drums" },
+            { PresetNumber: 0, PresetName: "Home/cross" }
+        ],
+
+        DISABLE_SET_BUTTONS_AFTER_S: 30,    // how many seconds delay before disabling the SET button
+        MINIMUM_PRESET_ROWS: 2              // suggest 2 rows.  e.g. show top 2 presets always
+    },
+
     x32: {
 
         host: "192.168.56.1",
