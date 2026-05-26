@@ -6,6 +6,7 @@ const WebSocket = require("ws");
 const config = require("./config/config");
 const X32 = require("./lib/x32");
 const OBS = require("./lib/obs.js");
+const CAMERA = require("./lib/camera.js");
 
 const app = express();
 const server = http.createServer(app);
@@ -30,6 +31,8 @@ x32.connect();
 
 const obs = new OBS(config.obs);
 obs.connect();
+
+const camera = new CAMERA(config.camera);
 
 // ----------------------------------------------------
 // API: config
@@ -109,6 +112,8 @@ x32.on("heartbeatsMissed", state => {
 // setCameraTallyColor
 // highlightCameraPreset
 // flashStatusText
+
+// appendToSettingsTextArea
 
 // ----------------------------------------------------
 // Start server

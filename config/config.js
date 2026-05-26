@@ -15,7 +15,7 @@ module.exports = {
     },
 
     camera: {
-        host: "http://192.168.32.107", // "http://"
+        CAMERA_IP: "192.168.32.107",  // `http://${config.CAMERA_IP}`
 
         CAMERA_PRESETS: [
             { PresetNumber: 2, PresetName: "Lectern" },
