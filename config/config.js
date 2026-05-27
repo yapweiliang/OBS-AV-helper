@@ -5,7 +5,7 @@ module.exports = {
         port: 4455,
         password: "6hzHSBJSkq7KvEOS",
 
-        PTZ_ACTION_DEVICE_ID: 3,
+        PTZ_ACTION_DEVICE_ID: 1,
 
         OVERLAY_SCENENAME: "---OVERLAY---",
         PARENTS_OVERLAY_SOURCENAME: "parents_overlay",
@@ -15,19 +15,8 @@ module.exports = {
     },
 
     camera: {
-        CAMERA_IP: "192.168.32.107",  // `http://${config.CAMERA_IP}`
-
-        CAMERA_PRESETS: [
-            { PresetNumber: 2, PresetName: "Lectern" },
-            { PresetNumber: 3, PresetName: "w/Lead" },
-            { PresetNumber: 5, PresetName: "Band right" },
-            { PresetNumber: 6, PresetName: "Band full" },
-            { PresetNumber: 4, PresetName: "Drums" },
-            { PresetNumber: 0, PresetName: "Home/cross" }
-        ],
-
-        DISABLE_SET_BUTTONS_AFTER_S: 30,    // how many seconds delay before disabling the SET button
-        MINIMUM_PRESET_ROWS: 2              // suggest 2 rows.  e.g. show top 2 presets always
+        CAMERA_IP: "192.168.32.107"  // `http://${config.CAMERA_IP}`
+        
     },
 
     x32: {
@@ -77,6 +66,19 @@ module.exports = {
         // not actions (not intended)
         faders: [
             { id: "fdrTest",        signalId: "testVolume",     label: "ch 1 test"}
-        ]
+        ],
+
+        cameraPresets: [
+            { PresetNumber: 2, PresetName: "Lectern" },
+            { PresetNumber: 3, PresetName: "w/Lead" },
+            { PresetNumber: 5, PresetName: "Band right" },
+            { PresetNumber: 6, PresetName: "Band full" },
+            { PresetNumber: 4, PresetName: "Drums" },
+            { PresetNumber: 0, PresetName: "Home/cross" }
+        ],
+
+        DISABLE_SET_BUTTONS_AFTER_S: 30,    // how many seconds delay before disabling the SET button
+        PRESETS_TABLE_MINIMUM_ROWS: 2              // suggest 2 rows.  e.g. show top 2 presets always
+
     }
 };
