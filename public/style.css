@@ -32,9 +32,17 @@ button {
     font-size: 18px;
     
 }
+
 button:hover { 
     background-color: var(--button-bg-hover); 
 }
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
 
 .hold-button {
     position: relative;
@@ -58,11 +66,6 @@ button:hover {
     --button-bg-hover: var(--color-danger-hover);
 }
 
-.button--disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .button--highlighted {
     --button-bg: var(--green3);
     --button-bg-hover: var(--green2); 
@@ -74,7 +77,7 @@ button:hover {
 }
 
 .button--muted {
-    --button-bg: var(--red3);
+    --button-bg: red;
     --button-bg-hover: var(--red2); 
 }
 

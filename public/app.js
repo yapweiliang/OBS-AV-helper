@@ -22,8 +22,12 @@ let x32HeartbeatsMissedCounter = 0;  // number of poll cycles it has been silent
 let obsConnectSuccess = null; // disconnected, connected, 
 let obsRecordState = true; // live (streaming, recordning)
 let obsStreamState = true;
+let obsActiveScene = null;
 
 const WS_RECONNECT_MS = 5000;   // 
+
+const OBS_SCENE_BUTTONS_CONTAINER = "obsButtons";
+const eid_obsCurrentScene = document.getElementById("obsCurrentScene");
 
 const PRESETS_TABLE_CONTAINER_ELEMENTID = "presetTableInlineContainer";
 let PRESETS_TABLE_MINIMUM_ROWS;
@@ -196,13 +200,16 @@ function onSocketMessage(event) {
         case "updateOBSLiveStatus":
             obsRecordState = msg.recordState;
             obsStreamState = msg.streamState;
-            updateOBSUIStatus();
+            updateOBSLiveStatus();
             break;
         case "updateOBSConnectionStatus":
             obsConnectSuccess = msg.state;
             updateOBSConnectionStatus();
+            console.log('obsconnectsuccess', obsConnectSuccess)
+            enableOBSActionButtons(obsConnectSuccess);
             break;
-
+        case "highlightOBSScene":
+            highlightOBSScene(msg.sceneName);
 
         // ui/status messages
         case "flashStatusText":
@@ -439,13 +446,13 @@ function updateX32ControlsStatus() {
     updateX32Faders();
 }
 
-function updateAllUI() {
-    // controls, not connection
-
-    updateX32ControlsStatus(); // buttons, indicators, faders
-    updateCameraUIStatus(); // tally light
-    updateOBSUIStatus(); // streaming / recording
-}
+// function updateAllUI() {  // TODO this is not called?
+//     // controls, not connection
+// 
+//     updateX32ControlsStatus(); // buttons, indicators, faders
+//     updateCameraUIStatus(); // tally light
+//     updateOBSUIStatus(); // streaming / recording
+// }
 
 function flashStatusTextTimeout() {
     flashStatusTextTimeoutID = null;
@@ -481,6 +488,13 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
 // UPDATE general UI 
 // ----------------------------------------------------
 
+function enableOBSActionButtons(enabled = true) {
+    for (const btn of CONFIG.ui.obsScenes) {
+        const el = document.getElementById(btn.id);
+        el.disabled = !enabled;        
+    }
+}
+
 function enableActionButtons(enabled = true) {
 
     // maybe retain these, as they send a POST
@@ -490,13 +504,7 @@ function enableActionButtons(enabled = true) {
     }
 
     // OBS scene buttons
-    for (const btn of CONFIG.ui.obsScenes) {
-        const el = document.getElementById(btn.id);
-        el.disabled = !enabled;        
-
-        // btn.classList.....
-
-    }
+    enableOBSActionButtons(obsConnectSuccess && enabled);
 
     // Camera buttons (preset and actions)
 
@@ -587,6 +595,7 @@ function enableSetCameraPreset(preset_id) {
 
 function highlightCameraPreset(preset_id) {
     // TODO this logic should be managed from server.js
+    // this is currently also called from render table - how to manage - perhaps this needs to send message? how to find activePreset?
 
     // to be called by obs websocket on scene change, and when preset called
     // n < 0 means no activePreset
@@ -624,14 +633,14 @@ function updateCameraUIStatus() {
     // tally text = obs state
 
     eid_tallyTextArea.style.backgroundColor = serverConnected ? cameraTallyLightColor : "black";
-
+    // TODO do we update the presetsTable here too?
 }
 
 // ----------------------------------------------------
 // UPDATE OBS UI stuff
 // ----------------------------------------------------
 
-function updateOBSUIStatus() {
+function updateOBSLiveStatus() {
     // tally colour = camera state
     // tally text = obs state
 
@@ -639,6 +648,16 @@ function updateOBSUIStatus() {
     eid_tallyTextArea.innerHTML = serverConnected ? text : "?";
 }
 
+function highlightOBSScene(sceneName) {
+    for (const btn of CONFIG.ui.obsScenes) {
+        const el = document.getElementById(btn.id);
+        el.classList.remove('button--highlighted');
+        if (btn.sceneName == sceneName) {
+            el.classList.add('button--highlighted');
+        }
+    }
+    eid_obsCurrentScene.innerHTML = sceneName;
+}
 
 // ----------------------------------------------------
 // STYLE HELPERS

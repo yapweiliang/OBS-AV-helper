@@ -91,16 +91,24 @@ function broadcastStatusTextToBrowsers(text, durationMs) {
 // WebSocket: INCOMING from app.js
 // ----------------------------------------------------
 
-wss.on("connection", ws => {
+wss.on("connection", async ws => {
     console.log(DEBUG_PREFIX, "Browser connected");
+    // send X32 state
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
     ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
 
-    // TODO send obs message, and camera message
-    ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: camera.getCameraTallyColor() }));
-    ws.send(JSON.stringify({ type: "updateOBSLiveStatus", recordState: obs.b_recordState, streamState: obs.b_streamState }));
-    ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
+    // send camera state
+    ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: await camera.getCameraTallyColor() }));
+    // TODO do we send active preset ?
 
+    // send obs state
+    ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
+    ws.send(JSON.stringify({ type: "updateOBSLiveStatus", recordState: obs.b_recordState, streamState: obs.b_streamState }));
+    if (obs.obsConnectSuccess) {        
+        ws.send(JSON.stringify({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene()  }));
+    }
+
+    // declare message handler
     ws.on("message", data => wsMessageHandler(data, ws));
 });
 
@@ -181,8 +189,7 @@ async function wsMessageHandler(data, ws) {
         // messages from app.js for obs.js
         // -------------------------------
         case "callOBSScene":
-            console.log(DEBUG_PREFIX, "PLACEHOLDER call OBS scene:", msg.sceneName);
-            // TODO also to do the counterpart in obs.js
+            obs.setCurrentProgramScene(msg.sceneName);
             break;            
         case "toggleParentsOverlay":
             console.log(DEBUG_PREFIX, "PLACEHOLDER toggleParent Overlay");
@@ -223,12 +230,14 @@ x32.on("heartbeatsMissed", state => {
 // obs.js → server → camera / browser
 // ----------------------------------------------------
 
-obs.on("obsConnectSuccess", state => {
+obs.on("obsConnectSuccess", async state =>  {
     if (state) {
         broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToBrowsers({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera();
     } else {
         broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToBrowsers({ type: "highlightOBSScene", sceneName: "" });
         broadcastStatusTextToBrowsers("Disconnected from OBS", 0);
     }
 })
@@ -245,9 +254,13 @@ obs.on("highlightCameraPreset", preset_id => {
     highlightCameraPreset(preset_id);
 });
 
+obs.on("highlightOBSScene", sceneName => {
+    broadcastToBrowsers({ type: "highlightOBSScene", sceneName: sceneName});
+})
+
 function highlightCameraPreset(preset_id) {
-    // called from obs.on(...) or websocket
-    activePreset = preset_id;
+    // called from obs.on(...), or,  websocket
+    activePreset = preset_id; // TODO keep our own record
     broadcastToBrowsers({ type: "highlightCameraPreset", preset_id: preset_id});
 }
 
