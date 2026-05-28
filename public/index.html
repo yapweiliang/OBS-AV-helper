@@ -2,20 +2,15 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>X32 Control</title>
+    <link rel="stylesheet" href="style-root.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-status-text.css">
+    <link rel="stylesheet" href="style-presets-table.css">
+    <script src="app.js" defer></script>
+    <title>AV helper</title>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
 
-        button {
-            font-size: 18px;
-            padding: 12px 16px;
-            margin: 8px;
-            cursor: pointer;
-        }
 
         .toggle-on {
             background: red;
@@ -30,33 +25,170 @@
 
 <body>
 
-<div id="statusPanel">
-    <span id="serverStatus">Server: ?</span>
-    <span id="x32Status">X32: ?</span>
-    <span id="obsStatus">OBS: ?</span>
-</div>
+    <!------------------------------------------------------------------------>
+    <table class="status-area">
+<!--        <tbody> -->
+            <col class="status-connection-width"/>
+            <col class="status-tally-width"/>
+            <col/><!-- ignore third column for full width -->
+            <col class="status-tally-width"/>
+            
+            <tr>
+                <td class="">
+                    <div><span id="serverStatus" >⚪</span>Node</div>
+                    <div><span id="x32Status">⚪</span>X32</div>
+                    <div><span id="obsStatus">⚪</span>OBS</div>
+                </td>
+                <td class="status-tally-area" id="tallyTextArea">
+                    <span id="tallyText">unknown</span>
+                </td>                
+                <td class="status-text-area" id="statusTextArea">
+                    <span id="statusText">status text area</span>
+                </td>
+                <td>
+                    
+                    <button class="button--icon"
+                        id="helpButton"
+                        title="show help">
+                        ?
+                    </button>
+                    <button class="button--icon"
+                        id="infoButton"
+                        title="request camera settings">
+                        i
+                    </button>                
+                </td>
+            </tr>
+<!--        </tbody> -->
+    </table>
 
-    <h2>Sound Control Panel</h2>
+    <!------------------------------------------------------------------------>
+    <table width="100%">
+            <col width="30%" class=""/>
+            <col width="30%" class=""/>
+            <col width="40%" class=""/>
+        <thead>
+            <tr class="big-panel--header">
+                <td><h2>Sound Control Panel</h2></td>
+                <td><h2>OBS Control Panel</h2></td>
+                <td><h2>Camera Control Panel</h2></td>
+            </tr>
+            
+        </thead>
+        <tbody>
+            <tr class="big-panel--main">
+                <!------------------------------------------------------------------------>
+                <td>
+                    <div id="x32Buttons"></div>
+                    <div id="x32Indicators"></div>
+                </td>
+                <!------------------------------------------------------------------------>
+                <td>
+                    <div id="obsButtons"></div>
+                    <button>(maybe Start/Stop stream)</button>
+                    
+                    <div class="overlay-buttons">
+                        <button id="btnOverlayParents"
+                            title="Show overlay asking parents to collect children prompty AFTER service"
+                            class="hold-button button--disabled"
+                            data-hold-ms="500"
+                            data-action="toggleParentsOverlay"
+                            disabled>
+                            <span class="label">Parents collect after</Span>
+                        </button>
+                        <button id="btnOverlayCustom"
+                            title="Show overlay with customised text"
+                            class="hold-button button--disabled"
+                            data-hold-ms="500"
+                            data-action="toggleCustomOverlay"
+                            disabled>
+                            <span class="label">Custom message</Span>
+                        </button>
+                        <!--
+                        <button id="btnConfigureOverlays"
+                            title="This will show OVERLAY scene on OBS for configuration"
+                            class="hold-button button--inline button--disabled"
+                            data-hold-ms="0"
+                            data-action="configureOverlays"
+                            disabled>
+                            🔧 overlays...
+                        </button>
+                        -->
+                    </div>
+                </td>
+                <!------------------------------------------------------------------------>
+                <td>
+                    <div>
+                        <!--------------------------------->
+                        <table class="buttons-table">
+                            <tr>
+                                <td colspan="2">
+                                    Focus Zone: 
+                                    <select class="focus-zone-select"
+                                        id="focusZoneSelect"                
+                                        title="Focus Zone">
+                                    </select>
+                                </td>
+                            </tr>                            
+                            <tr>
+                                <td>
+                                    <button id="btnToggleAutoFocus"
+                                        title="Toggle between Auto Focus and AF Locked"
+                                        class="hold-button button--big"
+                                        data-action="toggleAutoFocus">
+                                        Auto<br>Focus
+                                    </button>
+                                </td>
+                                <td>
+                                    <button id="btnOnePushFocus"
+                                        title="Focus then lock in"
+                                        class="hold-button button--big"
+                                        data-action="onePushFocus">
+                                        OnePush<br>Focus
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <button id="btnOnePushWhiteBalance"
+                                        title="Set white balance then lock in"
+                                        class="hold-button"
+                                        data-action="onePushWhiteBalance">
+                                        OnePush White Balance
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                 
+                        <!--------------------------------->
+                        <div id="presetTableInlineContainer"></div>
+                        <!--------------------------------->
+                        <button id="btnResetCamera" 
+                            title="This will re-set the camera settings"
+                            class="hold-button"
+                            data-hold-ms="1500"
+                            data-action="resetCamera">
+                            Reset Camera...
+                        </button>
+                        <button id="btnRestartCamera" 
+                            title="This will restart the camera (takes about a minute)"
+                            class="hold-button"
+                            data-hold-ms="1500"
+                            data-action="restartCamera">
+                            Restart Camera...
+                        </button>
+                        <!--------------------------------->
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-    <div id="buttons"></div>
-    <div id="indicators"></div>
+    <!------------------------------------------------------------------------>
+    Version 1.0
 
-    <h2>OBS Control Panel</h2>
-    <button>Band Scene</button>
-    <button>Lectern Scene</button>
-    <button>Other Scene</button>
-    <button>Other Scene</button>
-    <button>Other Scene</button>
-    <button>Other Scene</button>
-    <button>Other Scene</button>
-    <button>(maybe Start/Stop stream)</button>
-
-    <h2>Camera Control Panel</h2>
-    <button>Set White Balance</button>
-    <button>OnePush Focus</button>
-    <button>(further buttons for adjusting then saving Preset positions)</button>
-
-    <script src="app.js"></script>
-
+    <!------------------------------------------------------------------------>
+    <div id="modalRoot"></div>
+    <!------------------------------------------------------------------------>
 </body>
 </html>

@@ -1,0 +1,65 @@
+:root {
+    /* from obs yami theme */
+    --red1: #E85E75;
+    --red2: #E33B57;
+    --red3: #C01C37;
+    --red4: #A1172E;
+    --red5: #7D1224;
+    --red6: #590D1A;
+    --green1: #59D966;
+    --green2: #37D247;
+    --green3: #25A231;
+    --green4: #1E8528;
+    --green5: #17641E;
+    --green6: #0F4313;
+    --blue1: #718CDC;
+    --blue2: #476BD7;
+    --blue3: #284CB8;
+    --blue4: #213E97;
+    --blue5: #1A3278;
+    --blue6: #162A64;
+
+    --yellow1: #EABC48;
+    --yellow2: #E5AF24;
+    --yellow3: #B88A16;
+    --yellow4: #926E11;
+    --yellow5: #6E520D;
+    --yellow6: #493709;
+
+    --grey1: #5B6273;
+    --grey2: #4E5566;
+    --grey3: #464B59;
+    --grey4: #3C404D;
+    --grey5: #323540;
+    --grey6: #272A33;
+    --grey7: #1D1F26;
+    --grey8: #13141A;
+
+    --white1: #FFFFFF;
+    --white2: #E1E1E1;
+    --white3: #D2D2D2;
+    --white4: #B4B4B4;
+    --white5: #969696;
+
+    --black1: #0A0A0A;
+    --black2: #1F1F1F;
+    --black3: #414141;
+    --black4: #646464;
+    --black5: #828282;
+
+
+    --bg_base: var(--grey6);
+    --text: var(--white1);
+    --border_radius: 4px;
+
+    /* my theme */
+    --color-primary: var(--blue3);
+    --color-primary-hover: var(--blue2);
+    --color-warning: var(--yellow3);
+    --color-warning-hover: var(--yellow2);
+    --color-danger: var(--red3);
+    --color-danger-hover: var(--red2);
+    --color-dim: var(--green3);
+    --color-dim-hover: var(--green4);
+    --padding: 12px;
+}
