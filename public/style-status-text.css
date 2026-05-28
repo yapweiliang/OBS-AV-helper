@@ -1,0 +1,38 @@
+.status-area {
+    table-layout: fixed;
+
+    height: 5ch;
+    overflow-y: auto;
+
+    width: 100%;
+    overflow-x: hidden;
+
+    background-color: var(--blue6);
+    color: var(--white2);        
+    font-size: small;
+}
+
+.status-connection-width {
+    width: 5em;
+}
+
+.status-tally-width {
+    width: 10em;
+}
+
+.status-tally-area {
+    /* background-color: var(--blue1); */
+    background-color: var(--grey3);
+    text-align: center;
+    font-size: medium;
+    font-weight: bolder;
+}
+
+.status-text-area {
+    vertical-align: top;
+}
+
+.status-text-area--warn {
+    background-color: var(--red6);
+    /* color: var(--yellow1) */
+}
