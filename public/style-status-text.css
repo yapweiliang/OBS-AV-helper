@@ -12,12 +12,20 @@
     font-size: small;
 }
 
+.status-area td {
+    border: none;
+}
+
 .status-connection-width {
     width: 5em;
 }
 
 .status-tally-width {
     width: 10em;
+}
+
+.status-buttons-width {
+    width: 8em;
 }
 
 .status-tally-area {

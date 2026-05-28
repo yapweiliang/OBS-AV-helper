@@ -104,8 +104,12 @@ async function loadConfig() {
 //   - for UI actions
 //   - for Camera actions
 
-async function triggerX32Action(signalId) {
+async function triggerX32Action(signalId, confirm = false) {
     try {
+        if (confirm) {
+            // TODO confirm method
+            flashStatusText("hello - confirm Y/N")
+        }
         await fetch(`/x32/action/${signalId}`, { method: "POST" });
     } catch (err) {
         console.error("POST-ing x32 action failed:", err);
@@ -314,7 +318,8 @@ function renderX32Buttons() {
 
         el.id = btn.id;
         el.textContent = btn.label;
-        el.onclick = () => triggerX32Action(btn.signalId);
+        el.onclick = () => triggerX32Action(btn.signalId, btn.confirm);
+        if (btn.confirm == true) el.classList.add('button--prompt');
 
         container.appendChild(el);
     }

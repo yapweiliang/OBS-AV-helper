@@ -31,7 +31,7 @@
             <col class="status-connection-width"/>
             <col class="status-tally-width"/>
             <col/><!-- ignore third column for full width -->
-            <col class="status-tally-width"/>
+            <col class="status-buttons-width"/>
             
             <tr>
                 <td class="">
@@ -43,10 +43,9 @@
                     <span id="tallyText">unknown</span>
                 </td>                
                 <td class="status-text-area" id="statusTextArea">
-                    <span id="statusText">status text area</span>
+                    <span id="statusText">Hello!</span>
                 </td>
                 <td>
-                    
                     <button class="button--icon"
                         id="helpButton"
                         title="show help">
@@ -63,15 +62,15 @@
     </table>
 
     <!------------------------------------------------------------------------>
-    <table width="100%">
+    <table class="big-panel">
             <col width="30%" class=""/>
             <col width="30%" class=""/>
             <col width="40%" class=""/>
         <thead>
             <tr class="big-panel--header">
-                <td><h2>Sound Control Panel</h2></td>
-                <td><h2>OBS Control Panel</h2></td>
-                <td><h2>Camera Control Panel</h2></td>
+                <td><h2>Sound Control</h2></td>
+                <td><h2>OBS Control</h2></td>
+                <td><h2>Camera Control</h2></td>
             </tr>
             
         </thead>
@@ -85,9 +84,9 @@
                 <!------------------------------------------------------------------------>
                 <td>
                     <div id="obsButtons"></div>
-                    <button>(maybe Start/Stop stream)</button>
+                    <button class="button--prompt">(maybe Start/Stop stream)</button>
                     
-                    <div class="overlay-buttons">
+                    <div>
                         <button id="btnOverlayParents"
                             title="Show overlay asking parents to collect children prompty AFTER service"
                             class="hold-button button--disabled"
@@ -166,14 +165,14 @@
                         <!--------------------------------->
                         <button id="btnResetCamera" 
                             title="This will re-set the camera settings"
-                            class="hold-button"
+                            class="hold-button button--prompt"
                             data-hold-ms="1500"
                             data-action="resetCamera">
                             Reset Camera...
                         </button>
                         <button id="btnRestartCamera" 
                             title="This will restart the camera (takes about a minute)"
-                            class="hold-button"
+                            class="hold-button button--prompt"
                             data-hold-ms="1500"
                             data-action="restartCamera">
                             Restart Camera...
