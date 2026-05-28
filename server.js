@@ -96,6 +96,11 @@ wss.on("connection", ws => {
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
     ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
 
+    // TODO send obs message, and camera message
+    ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: camera.getCameraTallyColor() }));
+    ws.send(JSON.stringify({ type: "updateOBSLiveStatus", recordState: obs.b_recordState, streamState: obs.b_streamState }));
+    ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
+
     ws.on("message", data => wsMessageHandler(data, ws));
 });
 
@@ -129,7 +134,7 @@ async function wsMessageHandler(data, ws) {
             // TODO statusText update
             break;
         case "setCameraPreset":
-            e = await camera.setPreset({ n: preset_id, name: preset_name });
+            e = await camera.setPreset(msg.preset_id, msg.preset_name);
             // TODO statusText update
             break;
         case "toggleAutoFocus":
@@ -220,19 +225,20 @@ x32.on("heartbeatsMissed", state => {
 
 obs.on("obsConnectSuccess", state => {
     if (state) {
+        broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         doWakeupCamera();
     } else {
+        broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastStatusTextToBrowsers("Disconnected from OBS", 0);
     }
 })
 
 obs.on("setCameraTallyColor", state => {
-    camera.setCameraTallyColor(state)
+    camera.setCameraTallyColor(state) // this will also broadcast to clients
 });
 
 obs.on("updateOBSLiveStatus", (recordState, streamState) => {
-    console.log(DEBUG_PREFIX, "PLACEHOLDER to show if OBS is live/recording", recordState, streamState);
-    // TODO counterpart in app.js
+    broadcastToBrowsers({ type: "updateOBSLiveStatus", recordState: recordState, streamState: streamState});
 });
 
 obs.on("highlightCameraPreset", preset_id => {
@@ -252,7 +258,9 @@ function highlightCameraPreset(preset_id) {
 camera.on("updateClientTallyLightIndicator", color => {
     // this message is sent from camera.setCameraTallyColor()
     // because obs.js & server.js both can control Tally Light
-    broadcastToBrowsers("updateClientTallyLightIndicator", color);
+
+    // optionally intercept color=="black" and change it (for failed camera API call)
+    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: color});
 });
 
 camera.on("updateClientFocusState", (mode, locked, zone) => {

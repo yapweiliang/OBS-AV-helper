@@ -12,10 +12,16 @@ let setButtonTimeoutHandle = null;
 let rowHighlightTimeoutHandle = null;
 let showAllPresets = false;
 
+// camera states
+let cameraTallyLightColor = "";
+
 // Connectivity states
 let serverConnected = false; // can this go to STATE or should that be X32_STATE?
 let reconnectTimer = null;
 let x32HeartbeatsMissedCounter = 0;  // number of poll cycles it has been silent
+let obsConnectSuccess = null; // disconnected, connected, 
+let obsRecordState = true; // live (streaming, recordning)
+let obsStreamState = true;
 
 const WS_RECONNECT_MS = 5000;   // 
 
@@ -27,7 +33,14 @@ const defaultFlashTimeoutDurationMs = 5000;
 let flashStatusTextTimeoutID = null;
 const eid_statusTextArea = document.getElementById('statusTextArea');
 const eid_statusText = document.getElementById('statusText');
+const eid_tallyTextArea = document.getElementById('tallyTextArea');
+const eid_tallyText = document.getElementById('tallyText'); // use for OBS STATE
 const nothingToFlash = ""; // what to display when the message is cleared
+
+const GREEN_DOT = '🟢';
+const AMBER_DOT = '🟡';
+const RED_DOT   = '🔴';
+const WHITE_DOT = '⚪';
 
 /*
     OUTLINE
@@ -156,7 +169,7 @@ function onSocketMessage(event) {
         // X32-related messages
         case "x32StateChanged":
             X32_STATE = msg.state;
-            updateUI();
+            updateX32ControlsStatus();
             break;
         case "x32LoadSuccess":
             // TODO report snippet load success
@@ -175,8 +188,21 @@ function onSocketMessage(event) {
             console.log("enableSetCameraPreset PLACEHOLDER")
             break;
         case "updateClientTallyLightIndicator":
-            console.log("PLACEHOLDER tally light set to: ", msg.color);
+            cameraTallyLightColor = msg.color;
+            updateCameraUIStatus();
             break;
+
+        // obs-related messages
+        case "updateOBSLiveStatus":
+            obsRecordState = msg.recordState;
+            obsStreamState = msg.streamState;
+            updateOBSUIStatus();
+            break;
+        case "updateOBSConnectionStatus":
+            obsConnectSuccess = msg.state;
+            updateOBSConnectionStatus();
+            break;
+
 
         // ui/status messages
         case "flashStatusText":
@@ -194,15 +220,24 @@ function onSocketMessage(event) {
 
 function onSocketOpen() {
     serverConnected = true;
-    enableX32Buttons();
+
+    enableActionButtons();
+
     updateServerConnectionStatus();
+    updateX32ConnectionStatus();
+    updateOBSConnectionStatus();
 }
 
 function onSocketClose() {
     if (reconnectTimer) { return; }
     serverConnected = false;
+
     updateServerConnectionStatus();
-    enableX32Buttons(false);
+    updateX32ConnectionStatus();
+    updateOBSConnectionStatus();
+
+    enableActionButtons(false);
+
     reconnectTimer = setTimeout(() => { reconnectTimer = null; connectWebSocket(); }, WS_RECONNECT_MS);
 }
 
@@ -215,19 +250,33 @@ function onSocketError(err) {
 function updateServerConnectionStatus() {
     const el = document.getElementById( "serverStatus" );
     if (!el) return;
-    el.textContent = serverConnected ? "Connected to server" : "Disconnected from server";
-    // TODO beautify
+    el.textContent = serverConnected ? GREEN_DOT : RED_DOT
 }
 
 function updateX32ConnectionStatus() {
     const el = document.getElementById( "x32Status" );
     if (!el) return;
-    el.textContent = (x32HeartbeatsMissedCounter==0) ? "Connected to X32" : "Not heard for a while";  // stale state...
-    // TODO beautify
+    if (!serverConnected) {
+        el.textContent = WHITE_DOT;
+        return;
+    }
+    if (x32HeartbeatsMissedCounter==0) {
+        el.textContent = GREEN_DOT
+    } else if (x32HeartbeatsMissedCounter <3) {
+         el.textContent = AMBER_DOT
+    } else {
+        el.textContent = RED_DOT
+    }
 }
 
-function updateCameraConnectionStatus() {
-    // TODO, maybe model similarly to X32
+function updateOBSConnectionStatus() {
+    const el = document.getElementById( "obsStatus" );
+    if (!el) return;
+        if (!serverConnected) {
+        el.textContent = WHITE_DOT;
+        return;
+    }
+    el.textContent = obsConnectSuccess ? GREEN_DOT : RED_DOT
 }
 
 // ----------------------------------------------------
@@ -384,10 +433,18 @@ function renderOBSButtons() {
 // UI UPDATE (CORE BINDING and helpers)
 // ----------------------------------------------------
 
-function updateUI() {
+function updateX32ControlsStatus() {
     updateX32Buttons();
     updateX32Indicators();
     updateX32Faders();
+}
+
+function updateAllUI() {
+    // controls, not connection
+
+    updateX32ControlsStatus(); // buttons, indicators, faders
+    updateCameraUIStatus(); // tally light
+    updateOBSUIStatus(); // streaming / recording
 }
 
 function flashStatusTextTimeout() {
@@ -406,12 +463,12 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
         eid_statusText.innerHTML = text;
         if (durationMs == 0) {
             if (text == nothingToFlash) {
-                eid_statusTextArea.classList.remove("statusTextAreaWarn")
+                eid_statusTextArea.classList.remove("status-text-area--warn")
             } else {
-                eid_statusTextArea.classList.add("statusTextAreaWarn")
+                eid_statusTextArea.classList.add("status-text-area--warn")
             }
         } else {
-            eid_statusTextArea.classList.remove("statusTextAreaWarn")
+            eid_statusTextArea.classList.remove("status-text-area--warn")
         }
 
         if (durationMs > 0) {
@@ -421,17 +478,39 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
 }
 
 // ----------------------------------------------------
-// UPDATE X32 UI (buttons, indicators, faders, etc)
+// UPDATE general UI 
 // ----------------------------------------------------
 
-function enableX32Buttons(enabled = true) {
+function enableActionButtons(enabled = true) {
+
+    // maybe retain these, as they send a POST
     for (const btn of CONFIG.ui.buttons) {
         const el = document.getElementById(btn.id);
         el.disabled = !enabled;
+    }
+
+    // OBS scene buttons
+    for (const btn of CONFIG.ui.obsScenes) {
+        const el = document.getElementById(btn.id);
+        el.disabled = !enabled;        
+
         // btn.classList.....
 
     }
+
+    // Camera buttons (preset and actions)
+
+    // overall background
+    if (enabled) {
+        document.body.classList.remove('disabled-background');
+    } else {
+        document.body.classList.add('disabled-background');
+    }
 }
+
+// ----------------------------------------------------
+// UPDATE X32 UI (buttons, indicators, faders, etc)
+// ----------------------------------------------------
 
 function updateX32Buttons() {
 
@@ -514,7 +593,7 @@ function highlightCameraPreset(preset_id) {
     // activePreset = preset_id;  // TODO this should live in server.js
 
     const rows = document.querySelectorAll(`#${PRESETS_TABLE_CONTAINER_ELEMENTID} tr`);
-    rows.forEach(r => r.classList.remove("highlight"));
+    rows.forEach(r => r.classList.remove("presets-table--highlight"));
     resetAllSetButtons();
     if (rowHighlightTimeoutHandle) {
         clearTimeout(rowHighlightTimeoutHandle);
@@ -535,11 +614,31 @@ function highlightCameraPreset(preset_id) {
 
     if (!target) return;
 
-    target.classList.add("highlight");
+    target.classList.add("presets-table--highlight");
     enableSetCameraPreset(preset_id);
 
+}
+
+function updateCameraUIStatus() {
+    // tally colour = camera state
+    // tally text = obs state
+
+    eid_tallyTextArea.style.backgroundColor = serverConnected ? cameraTallyLightColor : "black";
 
 }
+
+// ----------------------------------------------------
+// UPDATE OBS UI stuff
+// ----------------------------------------------------
+
+function updateOBSUIStatus() {
+    // tally colour = camera state
+    // tally text = obs state
+
+    const text = `${obsStreamState ? "STREAMING" : "-"}<br>${obsRecordState ? "RECORDING" : "-"}`
+    eid_tallyTextArea.innerHTML = serverConnected ? text : "?";
+}
+
 
 // ----------------------------------------------------
 // STYLE HELPERS
@@ -549,40 +648,12 @@ function applyBooleanStyle(el, value) {
     // TODO rename as mute rather than on/off
 
     if (value === true) {
-
-        el.classList.add("toggle-on");
-        el.classList.remove("toggle-off");
-
+        el.classList.add("button--muted");
+        el.classList.remove("button--unmuted");
     } else if (value === false) {
-
-        el.classList.add("toggle-off");
-        el.classList.remove("toggle-on");
-
-    } else {
-
-        el.classList.remove("toggle-on", "toggle-off");
+        el.classList.add("button--unmuted");
+        el.classList.remove("button--muted");
     }
-}
-
-// ----------------------------------------------------
-// FLASH 
-// ----------------------------------------------------
-
-function TODO_remove_flash(signalId) {
-
-    const btn = CONFIG.ui.buttons.find(b => b.signalId === signalId);
-
-    if (!btn) return;
-
-    const el = document.getElementById(btn.id);
-
-    if (!el) return;
-
-    el.style.opacity = 0.4;
-
-    setTimeout(() => {
-        el.style.opacity = 1;
-    }, 300);
 }
 
 // ----------------------------------------------------

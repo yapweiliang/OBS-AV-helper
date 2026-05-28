@@ -16,7 +16,7 @@ module.exports = {
 
     camera: {
         CAMERA_IP: "192.168.32.107"  // `http://${config.CAMERA_IP}`
-        
+        //CAMERA_IP: "ubuntu-server.rarebits:5000"
     },
 
     x32: {
@@ -46,15 +46,16 @@ module.exports = {
     ui: {
         // actions
         buttons: [
-            { id: "btnInitialise",      signalId: "initialise",     label: "Initialise", confirm: true },
+            { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
+            { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" },
+
             { id: "btnLecternOn",       signalId: "lecternOn",      label: "Lectern On" },
             { id: "btnLecternLouder",   signalId: "lecternLouder",  label: "Lectern Louder" },
             { id: "btnBandSinging",     signalId: "bandSinging",    label: "Band Singing" },
             { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
             { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
 
-            { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
-            { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" }
+            { id: "btnInitialise",      signalId: "initialise",     label: "Initialise...", confirm: true }            
         ],
 
         // not actions
@@ -78,7 +79,14 @@ module.exports = {
         ],
 
         DISABLE_SET_BUTTONS_AFTER_S: 30,    // how many seconds delay before disabling the SET button
-        PRESETS_TABLE_MINIMUM_ROWS: 2              // suggest 2 rows.  e.g. show top 2 presets always
+        PRESETS_TABLE_MINIMUM_ROWS: 2,              // suggest 2 rows.  e.g. show top 2 presets always
 
+        obsScenes: [
+            { id: "btnOBSBand",     sceneName: "Ban",       label: "Band - Right" },
+            { id: "btnOBSBand2",    sceneName: "Ban2",      label: "Band 2" },
+            { id: "btnOBSBand3",    sceneName: "Ban3",      label: "Band 3" },
+            { id: "btnOBSLectern",  sceneName: "Lectern",   label: "abcdef" },
+            { id: "btnReading",     sceneName: "Reading",   label: "Reading" }
+        ]
     }
 };
