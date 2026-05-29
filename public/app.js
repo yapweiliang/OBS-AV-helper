@@ -829,55 +829,24 @@ async function runHoldAction(actionName, button) {
     
     button.classList.add("button--waiting");
 
+    const allowedMessages = [
+        'toggleParentsOverlay',
+        'toggleCustomOverlay',
+        'toggleStreamStartStop',
+        'toggleAutoFocus',
+        'onePushFocus',
+        'onePushWhiteBalance'];
+
     if (actionName.startsWith(X32_TAG)) {
-        // handle X32 buttons first
+        // handle X32 hold-button buttons (with confirm flag, e.g. initialise)
         const signalId = actionName.replace(X32_TAG, '');
         triggerX32Action(signalId);
+    } else if (allowedMessages.includes(actionName)) {
+        // then other (obs & camera) buttons
+        socket.send(JSON.stringify({ type: actionName }));
     } else {
-        // other buttons
-        switch (actionName) {
-            case "toggleParentsOverlay":
-                console.log("hello from runHoldAction:", actionName)
-                // toggleParentsOverlay('Parents collect after');
-                break;
-            case "toggleCustomOverlay":
-                console.log("hello from runHoldAction:", actionName)
-                // toggleCustomOverlay('Custom message');
-                break;
-            case "toggleStreatStartStop":
-                console.log("hello from runHoldAction:", actionName)
-                break;
-
-            case "toggleAutoFocus":
-                console.log("hello from runHoldAction:", actionName)
-                // await App.Camera.toggleAutoFocus();
-                // await refreshFocusMode();
-                break;
-            case "onePushFocus":
-                console.log("hello from runHoldAction:", actionName)
-                // await App.Camera.onePushFocus();
-                // await refreshFocusMode();
-                break;
-            case "onePushWhiteBalance":
-                console.log("hello from runHoldAction:", actionName)
-                // await App.Camera.onePushWhiteBalance();
-                break;
-
-            case "resetCamera":
-                console.log("hello from runHoldAction:", actionName)
-                // await App.Camera.reloadCameraSettings();
-                // await refreshFocusZone();
-                // await refreshFocusMode();
-                break;
-            case "restartCamera":
-                console.log("hello from runHoldAction:", actionName)
-                // await App.Camera.rebootCamera();
-                break;
-
-            default:
-                console.warn("Unknown hold action:", actionName);
-        }
-
+        // report unknown action
+        console.warn("Unknown hold action:", actionName);
     }
     
     button.classList.remove("button--waiting");

@@ -148,11 +148,13 @@ async function wsMessageHandler(data, ws) {
         case "toggleAutoFocus":
             e = await camera.toggleAutoFocus();
             // TODO statusText update
+            // await refreshFocusMode()
             await refreshCameraUIStates();
             break;
         case "onePushFocus":
             // TODO statusText update in the form of  // this.emit("flashStatusText", `${msg} ${e ? OK_TEXT : FAILED_TEXT}`);
             e = await camera.onePushFocus();
+            // await refreshFocusMode();
             break;
         case "onePushWhiteBalance":
             e = await camera.onePushWhiteBalance();
@@ -165,6 +167,8 @@ async function wsMessageHandler(data, ws) {
             break;
         case "resetCamera":
             e = await camera.reloadCameraSettings();
+            // await refreshFocusZone();
+            // await refreshFocusMode();
             // TODO statusText update
             await refreshCameraUIStates();
             break;
@@ -193,11 +197,17 @@ async function wsMessageHandler(data, ws) {
             break;            
         case "toggleParentsOverlay":
             console.log(DEBUG_PREFIX, "PLACEHOLDER toggleParent Overlay");
+            // toggleParentsOverlay('Parents collect after');
             // TODO update button status, if possible manage countdown here
             break;
         case "toggleCustomOverlay":
             console.log(DEBUG_PREFIX, "PLACEHOLDER toggle Custom Overlay");
+            // toggleCustomOverlay('Custom message');
             // TODO update button status, if possible manage countdown here
+            break;
+        case "toggleStreamStartStop":
+            console.log(DEBUG_PREFIX, "PLACEHOLDER toggle stream startstop");
+            // TODO update button status
             break;
         case "configureOverlays":
             console.log(DEBUG_PREFIX, "PLACEHOLDER configure Overlay");
