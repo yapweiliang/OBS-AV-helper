@@ -235,6 +235,7 @@ obs.on("obsConnectSuccess", async state =>  {
         broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToBrowsers({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera();
+        // TODO validate scenes/sources - check that these actually exist and enable/disable?
     } else {
         broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToBrowsers({ type: "highlightOBSScene", sceneName: "" });

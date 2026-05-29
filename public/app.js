@@ -26,7 +26,7 @@ let obsActiveScene = null;
 
 const WS_RECONNECT_MS = 5000;   // 
 
-const OBS_SCENE_BUTTONS_CONTAINER = "obsButtons";
+const OBS_SCENE_BUTTONS_CONTAINER = "obsSceneButtonsContainer";
 const eid_obsCurrentScene = document.getElementById("obsCurrentScene");
 
 const PRESETS_TABLE_CONTAINER_ELEMENTID = "presetTableInlineContainer";
@@ -45,6 +45,35 @@ const GREEN_DOT = '🟢';
 const AMBER_DOT = '🟡';
 const RED_DOT   = '🔴';
 const WHITE_DOT = '⚪';
+
+const OTHER_OBS_ACTION_BUTTONS = [
+        'btnOverlayParents', 'btnOverlayCustom',
+        'btnStartStopStream'
+    ];
+
+const OTHER_CAMERA_ACTION_BUTTONS = [
+        'btnToggleAutoFocus', 'btnOnePushFocus', 'btnOnePushWhiteBalance', 
+        'btnResetCamera', 'btnRestartCamera', 
+        'selFocusZoneSelect'
+    ];
+
+const FOCUS_ZONES = [
+    { id: 0, label: 'top'    },
+    { id: 1, label: 'centre' },
+    { id: 2, label: 'bottom' },
+    { id: 3, label: 'left'   },
+    { id: 4, label: 'right'  },        
+    { id: 5, label: 'all'    },
+    { id: 6, label: 'point (do not use)' }
+];
+
+const eid_selFocusZoneSelect     = document.getElementById('selFocusZoneSelect');
+const eid_btnToggleAutoFocus  = document.getElementById('btnToggleAutoFocus');
+const eid_btnOnePushFocus     = document.getElementById('btnOnePushFocus');
+const eid_infoBtn             = document.getElementById('infoButton');
+const eid_helpBtn             = document.getElementById('helpButton');
+
+const X32_TAG = "__X32__";
 
 /*
     OUTLINE
@@ -76,13 +105,27 @@ async function initialise() {
     PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
     PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
+    renderUI(); // buttons, etc
+
     const container = document.getElementById(PRESETS_TABLE_CONTAINER_ELEMENTID);
     if (container) {
         container.addEventListener("click", presetsTableActions);
     };
 
-    renderUI();
-    connectWebSocket();
+    // TODO add listeners and methods
+
+    document.querySelectorAll(".hold-button").forEach(initHoldButton);
+    // TODO X32 initialise button to have this method as well
+
+    // eid_focusZoneSelect.addEventListener('change', sendFocusZone);
+    
+    // eid_infoBtn.addEventListener('click', printSettings);
+    // eid_helpBtn.addEventListener('click', showHelp);
+
+    connectWebSocket(); 
+    // socket open calls onSocketOpen(), which
+    // - enables action buttons, updatesconnectionstatus, etc
+    // TODO can this obtain the last-known activePreset?
 }
 
 async function loadConfig() {
@@ -104,12 +147,8 @@ async function loadConfig() {
 //   - for UI actions
 //   - for Camera actions
 
-async function triggerX32Action(signalId, confirm = false) {
+async function triggerX32Action(signalId) {
     try {
-        if (confirm) {
-            // TODO confirm method
-            flashStatusText("hello - confirm Y/N")
-        }
         await fetch(`/x32/action/${signalId}`, { method: "POST" });
     } catch (err) {
         console.error("POST-ing x32 action failed:", err);
@@ -301,6 +340,7 @@ function renderUI() {
     renderX32Faders();
     renderPresetsTable();
     renderOBSButtons();
+    renderFocusZones();
 }
 
 // ----------------------------------------------------
@@ -318,8 +358,15 @@ function renderX32Buttons() {
 
         el.id = btn.id;
         el.textContent = btn.label;
-        el.onclick = () => triggerX32Action(btn.signalId, btn.confirm);
-        if (btn.confirm == true) el.classList.add('button--prompt');
+
+        if (btn.confirm == true) {
+            el.classList.add('hold-button', 'button--prompt');
+            el.dataset.action = X32_TAG + btn.signalId;
+            el.dataset.holdMs = 1000;            
+            initHoldButton(el);
+        } else {
+            el.onclick = () => triggerX32Action(btn.signalId, btn.confirm); // TOD can remove btn.confirm
+        }
 
         container.appendChild(el);
     }
@@ -358,7 +405,7 @@ function renderX32Faders() {
 }
 
 // ----------------------------------------------------
-// Camera Presets UI
+// Camera Presets UI & Focus Zones
 // ----------------------------------------------------
 
 function renderPresetsTable(activePreset = -1) {
@@ -422,11 +469,21 @@ function renderPresetsTable(activePreset = -1) {
     }        
 }
 
+function renderFocusZones() {
+    for (const zone of FOCUS_ZONES) {
+        const option = document.createElement('option');
+        option.value = zone.id;
+        option.textContent = zone.label;
+        eid_selFocusZoneSelect.appendChild(option);
+    };    
+};
 
-// OBS UI ---------------
+// ----------------------------------------------------
+// OBS UI
+// ----------------------------------------------------
 
 function renderOBSButtons() {
-    const container = document.getElementById("obsButtons");
+    const container = document.getElementById(OBS_SCENE_BUTTONS_CONTAINER);
     container.innerHTML = "";
 
     for (const btn of CONFIG.ui.obsScenes) {
@@ -498,6 +555,14 @@ function enableOBSActionButtons(enabled = true) {
         const el = document.getElementById(btn.id);
         el.disabled = !enabled;        
     }
+
+    for (const btn of OTHER_OBS_ACTION_BUTTONS) {
+        const el = document.getElementById(btn);
+        el.disabled = !enabled;
+    }    
+
+    // TODO is this a good place to enable/disable the wrongly-mapped buttons?
+    // TODO perhaps updateoverlaycache should send an overlayCacheUpdated message for server to update but this does not factor in renamed scenes
 }
 
 function enableActionButtons(enabled = true) {
@@ -511,7 +576,14 @@ function enableActionButtons(enabled = true) {
     // OBS scene buttons
     enableOBSActionButtons(obsConnectSuccess && enabled);
 
-    // Camera buttons (preset and actions)
+    // Camera preset and actions buttons
+
+    // other Camera buttons
+    for (const btn of OTHER_CAMERA_ACTION_BUTTONS) {
+        const el = document.getElementById(btn);
+        el.disabled = !enabled;
+    }
+
 
     // overall background
     if (enabled) {
@@ -599,10 +671,19 @@ function enableSetCameraPreset(preset_id) {
 }
 
 function highlightCameraPreset(preset_id) {
-    // TODO this logic should be managed from server.js
-    // this is currently also called from render table - how to manage - perhaps this needs to send message? how to find activePreset?
+    // called when:
+    // - server.js sends message on websocket connection [with preset_id]
+    //   - when presetsTableActions() process a call-button event/action
+    //   - when obs.js sends message on scene change
+    // - renderPresetsTable() for drawing/redrawing
+    //   - when app.js initialise() --> renderUI() --> renderPresetsTable()
+    //          TODO this currently does not obtain/know/send the active preset
+    //   - when [btnTogglePresets] --> presetsTableActions() --> renderPresetsTable()
+    //          TODO this currently does not know/send the activePreset
 
-    // to be called by obs websocket on scene change, and when preset called
+    // TODO how to ensure renderPresetsTable gets the correct activePreset?
+    // TODO this logic should be managed from server.js
+
     // n < 0 means no activePreset
     // activePreset = preset_id;  // TODO this should live in server.js
 
@@ -654,6 +735,10 @@ function updateOBSLiveStatus() {
 }
 
 function highlightOBSScene(sceneName) {
+    // called when:
+    // - obs.js emits message on scene change
+    // - server.js sends message on websocket connection
+
     for (const btn of CONFIG.ui.obsScenes) {
         const el = document.getElementById(btn.id);
         el.classList.remove('button--highlighted');
@@ -678,6 +763,125 @@ function applyBooleanStyle(el, value) {
         el.classList.add("button--unmuted");
         el.classList.remove("button--muted");
     }
+}
+
+// ----------------------------------------------------
+// HOLD BUTTON stuff (initHoldButton and runHoldAction)
+// ----------------------------------------------------
+
+function initHoldButton(button) {
+    button.dataset.originalText = button.textContent.trim();
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+    button.prepend(progressBar);
+
+    const progress = button.querySelector(".progress-bar");
+    const holdMs = button.dataset.holdMs !== undefined ? Number(button.dataset.holdMs) : 0;
+    const actionName = (button.dataset.action != undefined) ? button.dataset.action : "";
+    const title = (button.title != undefined) ? button.title : "";
+
+    let raf = null;
+    let timer = null;
+    let startTime = 0;
+
+    function reset() {
+        clearTimeout(timer);
+        cancelAnimationFrame(raf);
+        progress.style.width = "0%";
+    }
+
+    function update(now) {
+        const elapsed = now - startTime;
+        const percent = Math.min(elapsed / holdMs, 1);
+        progress.style.width = `${percent * 100}%`;
+        if (percent < 1) {
+            raf = requestAnimationFrame(update);
+        }
+    }
+
+    function startHold(e) {
+        if (e.pointerType === "mouse" && e.button !== 0) { return; }; // if mouse, only accept left click
+
+        const bypassHold = (button.dataset.bypassHold != undefined)
+        if (holdMs <= 0 || bypassHold) {
+            runHoldAction(actionName, button);
+            return;
+        }
+        // show the title only if holdMs > 0
+        if (title != "") { flashStatusText(`${title}`, (holdMs < 2000) ? 2000 : holdMs) };
+        startTime = performance.now();
+        raf = requestAnimationFrame(update);
+        timer = setTimeout(() => {
+            reset();
+            runHoldAction(actionName, button);
+        }, holdMs);
+    }
+
+    button.addEventListener("pointerdown", startHold);
+    ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => {
+        button.addEventListener(eventName, reset);
+    });
+}
+
+async function runHoldAction(actionName, button) {
+    // TODO disableCameraActionButtons disableActionButtons();
+    
+    button.classList.add("button--waiting");
+
+    if (actionName.startsWith(X32_TAG)) {
+        // handle X32 buttons first
+        const signalId = actionName.replace(X32_TAG, '');
+        triggerX32Action(signalId);
+    } else {
+        // other buttons
+        switch (actionName) {
+            case "toggleParentsOverlay":
+                console.log("hello from runHoldAction:", actionName)
+                // toggleParentsOverlay('Parents collect after');
+                break;
+            case "toggleCustomOverlay":
+                console.log("hello from runHoldAction:", actionName)
+                // toggleCustomOverlay('Custom message');
+                break;
+            case "toggleStreatStartStop":
+                console.log("hello from runHoldAction:", actionName)
+                break;
+
+            case "toggleAutoFocus":
+                console.log("hello from runHoldAction:", actionName)
+                // await App.Camera.toggleAutoFocus();
+                // await refreshFocusMode();
+                break;
+            case "onePushFocus":
+                console.log("hello from runHoldAction:", actionName)
+                // await App.Camera.onePushFocus();
+                // await refreshFocusMode();
+                break;
+            case "onePushWhiteBalance":
+                console.log("hello from runHoldAction:", actionName)
+                // await App.Camera.onePushWhiteBalance();
+                break;
+
+            case "resetCamera":
+                console.log("hello from runHoldAction:", actionName)
+                // await App.Camera.reloadCameraSettings();
+                // await refreshFocusZone();
+                // await refreshFocusMode();
+                break;
+            case "restartCamera":
+                console.log("hello from runHoldAction:", actionName)
+                // await App.Camera.rebootCamera();
+                break;
+
+            default:
+                console.warn("Unknown hold action:", actionName);
+        }
+
+    }
+    
+    button.classList.remove("button--waiting");
+    // TODO camera action buttons disableActionButtons('reset');
 }
 
 // ----------------------------------------------------

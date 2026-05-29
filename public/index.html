@@ -83,24 +83,27 @@
                 </td>
                 <!------------------------------------------------------------------------>
                 <td>
-                    <div id="obsButtons"></div>
-                    <button class="button--prompt">(maybe Start/Stop stream)</button>
-                    
+                    <div id="obsSceneButtonsContainer"></div>
                     <div>
+                        <button id="btnStartStopStream"
+                            title="Start or Stop OBS live stream"
+                            class="hold-button button--prompt"
+                            data-hold-ms="2000"
+                            data-action="toggleStreamStartStop">
+                            <span class="label">Start/Stop stream...</span>
+                        </button>
                         <button id="btnOverlayParents"
                             title="Show overlay asking parents to collect children prompty AFTER service"
-                            class="hold-button button--disabled"
+                            class="hold-button"
                             data-hold-ms="500"
-                            data-action="toggleParentsOverlay"
-                            disabled>
+                            data-action="toggleParentsOverlay">
                             <span class="label">Parents collect after</Span>
                         </button>
                         <button id="btnOverlayCustom"
                             title="Show overlay with customised text"
-                            class="hold-button button--disabled"
+                            class="hold-button"
                             data-hold-ms="500"
-                            data-action="toggleCustomOverlay"
-                            disabled>
+                            data-action="toggleCustomOverlay">
                             <span class="label">Custom message</Span>
                         </button>
                         <!--
@@ -125,7 +128,7 @@
                                 <td colspan="2">
                                     Focus Zone: 
                                     <select class="focus-zone-select"
-                                        id="focusZoneSelect"                
+                                        id="selFocusZoneSelect"                
                                         title="Focus Zone">
                                     </select>
                                 </td>
