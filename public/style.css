@@ -91,7 +91,7 @@ button:disabled {
 
 .button--muted {
     --button-bg: red;
-    --button-bg-hover: var(--red2); 
+    --button-bg-hover: var(--red3); 
 }
 
 /*
