@@ -55,7 +55,8 @@ module.exports = {
             { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
             { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
 
-            { id: "btnInitialise",      signalId: "initialise",     label: "Initialise...", confirm: true }            
+            { id: "btnInitialise",      signalId: "initialise",     label: "Initialise...",
+                confirm: true, helpText: "This will do basic settings for speech" }
         ],
 
         // not actions
@@ -83,8 +84,8 @@ module.exports = {
 
         obsScenes: [
             { id: "btnOBSBand",     sceneName: "Ban",       label: "Band - Right" },
-            { id: "btnOBSBand2",    sceneName: "Ban2",      label: "Band 2" },
-            { id: "btnOBSBand3",    sceneName: "Ban3",      label: "Band 3" },
+            { id: "btnOBSBand2",    sceneName: "Scene 2",      label: "Scene 2" },
+            { id: "btnOBSBand3",    sceneName: "Scene 3",      label: "Scene 3" },
             { id: "btnOBSLectern",  sceneName: "Lectern",   label: "abcdef" },
             { id: "btnReading",     sceneName: "Reading",   label: "Reading" }
         ]

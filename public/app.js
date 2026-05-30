@@ -376,7 +376,8 @@ function renderX32Buttons() {
         if (btn.confirm == true) {
             el.classList.add('hold-button', 'button--prompt');
             el.dataset.action = X32_TAG + btn.signalId;
-            el.dataset.holdMs = 1000;            
+            el.dataset.holdMs = 1000;
+            el.title = btn.helpText || "no help text defined";
         } else {
             el.onclick = () => triggerX32Action(btn.signalId, btn.confirm); // TOD can remove btn.confirm
         }
