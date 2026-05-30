@@ -734,13 +734,15 @@ function updateCameraUIStatus() {
 
     eid_tallyTextArea.style.backgroundColor = serverConnected ? cameraTallyLightColor : "black";
 
-    if (cameraFocusZoneId === null) {
+    if (cameraFocusZoneId == null) {
         eid_selFocusZoneSelect.classList.add('stale');
     } else {
         eid_selFocusZoneSelect.value = String(cameraFocusZoneId); 
         eid_selFocusZoneSelect.classList.remove('stale');
     }
-    
+
+    eid_btnToggleAutoFocus.classList.remove("button--highlighted");
+    eid_btnOnePushFocus.classList.remove("button--highlighted");    
     if (cameraFocusMode == "OP") {
         eid_btnOnePushFocus.classList.add("button--highlighted");
         eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus";

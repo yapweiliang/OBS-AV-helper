@@ -147,47 +147,53 @@ async function wsMessageHandler(data, ws) {
             break;
         case "toggleAutoFocus":
             e = await camera.toggleAutoFocus();
+            if (e!=null) {
+                const res = await refreshCameraFocusMode(); // reads then pushes to client
+            }
             // TODO statusText update
-            // await refreshFocusMode()
-            await refreshCameraUIStates();
             break;
         case "onePushFocus":
-            // TODO statusText update in the form of  // this.emit("flashStatusText", `${msg} ${e ? OK_TEXT : FAILED_TEXT}`);
             e = await camera.onePushFocus();
-            // await refreshFocusMode();
+            if (e!=null) {
+                const res = refreshCameraFocusMode(); // reads then pushes to client
+            }
+            // TODO statusText update
             break;
         case "onePushWhiteBalance":
             e = await camera.onePushWhiteBalance();
+            // TODO statusText update
             break;
         case "setFocusZone":
             if (msg.id == 6) {
                 ws.send(JSON.stringify({ 
                     type: "flashStatusText", 
-                    text: "point zone should not be used.  Ignoring." }));
-                broadcastToBrowsers({ type: "updateClientFocusState" }); // no data, implies no changes, but update
+                    text: "point zone should not be used.  Ignoring."
+                }));
+                ws.send(JSON.stringify({
+                    type: "updateClientFocusState"
+                })) // no additional data implies no changes, but force revert to existing value
             } else {
-                e = await camera.setFocusZone(msg.id); // does not block id=6
-                broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: e });
+                e = await camera.setFocusZone(msg.id); // returns focusZoneId or null; does not block id=6
+                refreshCameraFocusZone(e);
+                // broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: e });
+                // TODO statusText update, e==null = failure
             }
-            // TODO statusText update
             break;
         case "resetCamera":
             // TODO can we disable camera buttons temporarily?
             e = await camera.reloadCameraSettings();
-            // await refreshFocusZone();
-            // await refreshFocusMode();
             // TODO statusText update
-            await refreshCameraUIStates();
+            await refreshCameraAllStates();
             break;
         case "restartCamera":
             // TODO can we disable camera buttons temporarily?
             await doRebootCamera();
-            await refreshCameraUIStates();
+            await refreshCameraAllStates();
             break;
         case "wakeUpCamera":
             // TODO can we disable camera buttons temporarily?
             await doWakeupCamera();
-            await refreshCameraUIStates();
+            await refreshCameraAllStates();
             break;
 
         case "enableSetCameraPreset???":
@@ -310,18 +316,32 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function refreshCameraUIStates() {
-    // dual purpose - to compile then send update to client UI, but also as a test if camera is responsive
-    // TODO : focuszone, focusmode, 
-    // read states
-    // TODO Can we do away with this whole function?
-    // if successful, push to UI
-    // if failure, return failure
-    if (false) {
-    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: color});
-    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
-    }
+async function refreshCameraFocusZone(res) {
+    res ??= await camera.getFocusZone()
+    broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: res });
+    return res;
+}
 
+async function refreshCameraFocusMode() {
+    const res = await camera.summariseFocusMode(); // expect { mode: null, locked: null } if failure
+    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: res.mode, focus_locked: res.locked });
+    return res;
+}
+
+async function refreshCameraTallyColor() {
+    const res = await camera.getCameraTallyColor();
+    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: res});
+    return res;
+}
+
+async function refreshCameraAllStates() {
+    await refreshCameraFocusZone();
+    await refreshCameraFocusMode();
+    await refreshCameraTallyColor();
+    // TODO how to return failure?
+    // TODO shall we do away with this, and call individually?
+    // TODO how to use as a test for camera responsiveness?
+    
     // this.callAPI(j_camera_get_output_info, GET_INFO);
 }
 
@@ -342,7 +362,7 @@ async function doRebootCamera() {
             msg = `${msg}.`;
             broadcastStatusTextToBrowsers(msg, 0);
             await sleep(1000);
-            const cameraResponse = await refreshCameraUIStates();
+            const cameraResponse = await refreshCameraAllStates(); // TODO use different function to test
             if (cameraResponse) {
                 broadcastStatusTextToBrowsers("Camera on.  Please wait for image.");
                 break;
