@@ -835,6 +835,7 @@ function initHoldButton(button) {
     }
 
     function startHold(e) {
+        if (button.disabled) {return };
         if (e.pointerType === "mouse" && e.button !== 0) { return; }; // if mouse, only accept left click
 
         const bypassHold = (button.dataset.bypassHold != undefined)
