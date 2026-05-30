@@ -160,12 +160,19 @@ async function wsMessageHandler(data, ws) {
             e = await camera.onePushWhiteBalance();
             break;
         case "setFocusZone":
-            // TODO block/warn if id==6
-            e = await camera.setFocusZone(msg.id); // ignores id==6
+            if (msg.id == 6) {
+                ws.send(JSON.stringify({ 
+                    type: "flashStatusText", 
+                    text: "point zone should not be used.  Ignoring." }));
+                broadcastToBrowsers({ type: "updateClientFocusState" }); // no data, implies no changes, but update
+            } else {
+                e = await camera.setFocusZone(msg.id); // does not block id=6
+                broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: e });
+            }
             // TODO statusText update
-            await refreshCameraUIStates();
             break;
         case "resetCamera":
+            // TODO can we disable camera buttons temporarily?
             e = await camera.reloadCameraSettings();
             // await refreshFocusZone();
             // await refreshFocusMode();
@@ -173,10 +180,12 @@ async function wsMessageHandler(data, ws) {
             await refreshCameraUIStates();
             break;
         case "restartCamera":
+            // TODO can we disable camera buttons temporarily?
             await doRebootCamera();
             await refreshCameraUIStates();
             break;
         case "wakeUpCamera":
+            // TODO can we disable camera buttons temporarily?
             await doWakeupCamera();
             await refreshCameraUIStates();
             break;
@@ -290,7 +299,7 @@ camera.on("updateClientTallyLightIndicator", color => {
 camera.on("updateClientFocusState", (mode, locked, zone) => {
     // TODO should this be called from camera.setFocusMode/setFocusZone
     // or from server.js (upon requesting change in Focus settings)
-    broadcastToBrowsers({ type: "updateFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone}); // TODO the matching part in app.js
+    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
 });
 
 // ----------------------------------------------------
@@ -303,10 +312,15 @@ function sleep(ms) {
 
 async function refreshCameraUIStates() {
     // dual purpose - to compile then send update to client UI, but also as a test if camera is responsive
-    // TODO
+    // TODO : focuszone, focusmode, 
     // read states
+    // TODO Can we do away with this whole function?
     // if successful, push to UI
     // if failure, return failure
+    if (false) {
+    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: color});
+    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
+    }
 
     // this.callAPI(j_camera_get_output_info, GET_INFO);
 }

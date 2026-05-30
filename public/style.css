@@ -94,12 +94,11 @@ button:disabled {
     --button-bg-hover: var(--red3); 
 }
 
-/*
 .button--waiting {
     --button-bg: var(--green3);
     --button-bg-hover: var(--green4);
 }
-
+/*
 
 .button--hidden {
     display: none;
@@ -134,7 +133,8 @@ button:disabled {
 }*/
 
 .focus-zone-select {
-    min-width: 90px;
+    width: 9em;
+    min-height: 4ch;
 }
 
 .focus-zone-select.stale {

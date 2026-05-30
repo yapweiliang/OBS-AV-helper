@@ -14,6 +14,9 @@ let showAllPresets = false;
 
 // camera states
 let cameraTallyLightColor = "";
+let cameraFocusZoneId = null;
+let cameraFocusMode = null;
+let cameraFocusLocked = null;
 
 // Connectivity states
 let serverConnected = false; // can this go to STATE or should that be X32_STATE?
@@ -67,7 +70,7 @@ const FOCUS_ZONES = [
     { id: 6, label: 'point (do not use)' }
 ];
 
-const eid_selFocusZoneSelect     = document.getElementById('selFocusZoneSelect');
+const eid_selFocusZoneSelect  = document.getElementById('selFocusZoneSelect');
 const eid_btnToggleAutoFocus  = document.getElementById('btnToggleAutoFocus');
 const eid_btnOnePushFocus     = document.getElementById('btnOnePushFocus');
 const eid_infoBtn             = document.getElementById('infoButton');
@@ -105,22 +108,19 @@ async function initialise() {
     PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
     PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
-    renderUI(); // buttons, etc
+    renderUI(); // includes obs scene buttons (onclick), x32 buttons (onclick, and hold-button class)
 
+    // add listeners: presetsTable
     const container = document.getElementById(PRESETS_TABLE_CONTAINER_ELEMENTID);
-    if (container) {
-        container.addEventListener("click", presetsTableActions);
-    };
+    if (container) { container.addEventListener("click", presetsTableActions); };
 
-    // TODO add listeners and methods
+    // add listeners: hold-button class uses runHoldAction to process messages
+    document.querySelectorAll(".hold-button").forEach(initHoldButton); // includes initialising the x32 confirm-buttons
 
-    document.querySelectorAll(".hold-button").forEach(initHoldButton);
-    // TODO X32 initialise button to have this method as well
-
-    // eid_focusZoneSelect.addEventListener('change', sendFocusZone);
-    
-    // eid_infoBtn.addEventListener('click', printSettings);
-    // eid_helpBtn.addEventListener('click', showHelp);
+    // add listeners: other
+    eid_selFocusZoneSelect.addEventListener('change', () => runHoldAction("setFocusZone", eid_selFocusZoneSelect));
+    eid_infoBtn.addEventListener('click',             () => runHoldAction("getCameraSettings", eid_infoBtn));
+    //eid_helpBtn.addEventListener('click', showHelp);
 
     connectWebSocket(); 
     // socket open calls onSocketOpen(), which
@@ -176,7 +176,7 @@ function presetsTableActions(event) {
 
     if (action === "call") {
         socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id})); // App.Camera.callPreset(id);
-        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id})); // enableSetButton(id);
+        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id})); // enableSetButton(id); TODO is this needed
         socket.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: id})); // //highlightCameraPreset(id);  also sets activePreset   
         return;
     }
@@ -238,6 +238,19 @@ function onSocketMessage(event) {
             cameraTallyLightColor = msg.color;
             updateCameraUIStatus();
             break;
+        case "updateClientFocusState":
+            if (msg.focus_zone) { 
+console.log("updateClientFocusState received focus_zone", msg.focus_zone);
+                cameraFocusZoneId = msg.focus_zone;
+console.log("updateClientFocusState received focus_zone", msg.focus_zone, cameraFocusZoneId);                
+            }
+            if (msg.focus_mode) {
+console.log("updateClientFocusState received focus_mode", msg.focus_mode);
+                cameraFocusMode = msg.focus_mode;
+                cameraFocusLocked = msg.focus_locked;
+            }
+            updateCameraUIStatus();
+            break;
 
         // obs-related messages
         case "updateOBSLiveStatus":
@@ -253,13 +266,14 @@ function onSocketMessage(event) {
             break;
         case "highlightOBSScene":
             highlightOBSScene(msg.sceneName);
+            break;
 
         // ui/status messages
         case "flashStatusText":
             flashStatusText(msg.text, msg.durationMs);
             break;
         case "displayCameraSettings":
-            // TODO
+            console.log("TODO display camera settings", msg.text)
             break;
 
         default:
@@ -363,7 +377,6 @@ function renderX32Buttons() {
             el.classList.add('hold-button', 'button--prompt');
             el.dataset.action = X32_TAG + btn.signalId;
             el.dataset.holdMs = 1000;            
-            initHoldButton(el);
         } else {
             el.onclick = () => triggerX32Action(btn.signalId, btn.confirm); // TOD can remove btn.confirm
         }
@@ -719,6 +732,24 @@ function updateCameraUIStatus() {
     // tally text = obs state
 
     eid_tallyTextArea.style.backgroundColor = serverConnected ? cameraTallyLightColor : "black";
+
+    if (cameraFocusZoneId === null) {
+        eid_selFocusZoneSelect.classList.add('stale');
+    } else {
+        eid_selFocusZoneSelect.value = String(cameraFocusZoneId); 
+        eid_selFocusZoneSelect.classList.remove('stale');
+    }
+    
+    if (cameraFocusMode == "OP") {
+        eid_btnOnePushFocus.classList.add("button--highlighted");
+        eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus";
+    } else if (cameraFocusMode == "AF") {
+        eid_btnToggleAutoFocus.classList.add("button--highlighted");
+        eid_btnToggleAutoFocus.innerHTML = `Focus:<br>${cameraFocusLocked ? "Locked" : "Auto"}`
+    } else {
+        eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus"; // un-highlighted
+    }
+
     // TODO do we update the presetsTable here too?
 }
 
@@ -835,7 +866,11 @@ async function runHoldAction(actionName, button) {
         'toggleStreamStartStop',
         'toggleAutoFocus',
         'onePushFocus',
-        'onePushWhiteBalance'];
+        'onePushWhiteBalance',
+        'resetCamera',
+        'restartCamera',
+        'getCameraSettings'
+    ];
 
     if (actionName.startsWith(X32_TAG)) {
         // handle X32 hold-button buttons (with confirm flag, e.g. initialise)
@@ -843,10 +878,19 @@ async function runHoldAction(actionName, button) {
         triggerX32Action(signalId);
     } else if (allowedMessages.includes(actionName)) {
         // then other (obs & camera) buttons
+        console.log()
         socket.send(JSON.stringify({ type: actionName }));
     } else {
-        // report unknown action
-        console.warn("Unknown hold action:", actionName);
+        // then special buttons
+        // TODO move resetcamera and restart camera here, so we can disable/enable camera action buttons
+        switch (actionName) {
+            case "setFocusZone":
+                socket.send(JSON.stringify({ type: actionName, id: Number(eid_selFocusZoneSelect.value) }));
+                break;
+            default:
+                // report unknown action
+                console.warn("Unknown hold action:", actionName);
+        }
     }
     
     button.classList.remove("button--waiting");
