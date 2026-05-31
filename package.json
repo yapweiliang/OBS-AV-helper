@@ -1,5 +1,5 @@
 {
-  "name": "x32-control",
+  "name": "av-helper",
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "express-session": "^1.19.0",
     "obs-websocket-js": "^5.0.8",
     "osc": "^2.4.5",
     "ws": "^8.18.0"

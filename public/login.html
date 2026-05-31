@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+
+    <style>
+
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding-top: 80px;
+        }
+
+        input {
+            font-size: 2rem;
+            text-transform: uppercase;
+            text-align: center;
+            width: 8ch;
+        }
+
+        button {
+            font-size: 1.5rem;
+            margin-top: 20px;
+        }
+
+        #error {
+            color: red;
+            margin-top: 20px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>AV Control System</h1>
+
+    <p>Enter today's access code</p>
+    <!--maxlength must match the same in server.js-->
+    <input
+        id="txtCode"
+        maxlength="5"
+        autocomplete="off"
+        autocapitalize="characters">
+
+    <br>
+
+    <button id="btnLogin">
+        Connect
+    </button>
+
+    <div id="error"></div>
+
+    <script src="/public/login.js"></script>
+
+</body>
+</html>

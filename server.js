@@ -3,6 +3,21 @@ const http = require("http");
 const path = require("path");
 const WebSocket = require("ws");
 
+// ----------------------------------------
+// additional stuff for daily code login
+// ----------------------------------------
+const crypto = require("crypto");
+const session = require("express-session");
+const PUBLIC_LOGIN_PAGE = __dirname + "/public/login.html";
+const PUBLIC_INDEX_PAGE = __dirname + "/public/index.html";
+// ----------------------------------------
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
+const CODE_LENGTH = 5;
+const AUTH_SECRET = "j7WCyKse9BPjcQ3GcdtSxdf45wWL32Ke"; // TODO MOVE
+const SESSION_SECRET = "i2Y2oFtScwCBLIszHj7zE3ohcwQRPCIC";  // TODO MOVE
+// ----------------------------------------
+
+
 const config = require("./config/config");
 const X32 = require("./lib/x32");
 const OBS = require("./lib/obs.js");
@@ -10,30 +25,159 @@ const CAMERA = require("./lib/camera.js");
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+
+// const wss = new WebSocket.Server({ server }); // automatically allow websocket upgrade
+const wss = new WebSocket.Server({ noServer: true }); // require Daily Code first
 
 const DEBUG_PREFIX = "[server.js]";
 const LISTEN_PORT = 3000;
+
+/*
+    OUTLINE
+    - helpers for authentication
+    - middleware stuff
+        - session
+        - various get, post; for login, etc
+        - static files
+        - websocket authentication
+
+    - server API (GET) for client to read config
+    - server API (POST) for client app to send x32 signals
+    - websocket push to browsers (helpers)
+    - websocket INCOMING from app.js
+
+    - set up X32/OBS/Camera (Emitter)    
+    - X32 (Emitter)     - INCOMING
+    - OBS (Emitter)     - INCOMING
+    - CAMERA (Emitter)  - INCOMING
+    - camera helper functions
+
+    - START SERVER
+*/
+
+
+// --- helpers ---
+function isLocalRequest(req) {
+    const host = req.hostname;
+    const ip = req.ip;
+    return ( host === "localhost" || host === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1" );
+}
+
+function getDailyCode() {
+
+    // set 2am as the threshold for the day
+    const thisDay = new Date();
+    if (thisDay.getHours() < 2) { thisDay.setDate(thisDay.getDate() - 1); }
+    const dateString = thisDay.toISOString().slice(0, 10);
+
+    const hash = crypto.createHash("sha256").update(AUTH_SECRET + dateString).digest();
+
+    // convert first bytes into readable chars
+    let code = "";
+    for (let i = 0; i < CODE_LENGTH; i++) {
+        const index = hash[i] % CODE_ALPHABET.length;
+        code += CODE_ALPHABET[index];
+    }
+    return code;
+}
+
+function requireAuth(req, res, next) {
+    if (isLocalRequest(req)) {
+        return next();
+    }
+    if (req.session?.authenticated) {
+        return next();
+    }
+    return res.status(401).sendFile(PUBLIC_LOGIN_PAGE);
+}
 
 // ----------------------------------------------------
 // Middleware
 // ----------------------------------------------------
 
+// --- SESSION ---
+const sessionParser = session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false,
+        maxAge: 1000 * 60 * 60 * 24
+    }
+});
+app.use(sessionParser)
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
-// ----------------------------------------------------
-// X32 and OBS 
-// ----------------------------------------------------
+// --- LOGIN, LOGOUT ---
 
-const x32 = new X32(config.x32);
-x32.connect();
+// public login page
+app.get("/login", (req, res) => {
+    res.sendFile(PUBLIC_LOGIN_PAGE);
+});
 
-const obs = new OBS(config.obs);
-obs.connect();
+// login API
+app.post("/login", (req, res) => {
+    const submittedCode = (req.body.code || "").toUpperCase().trim();
+    if (submittedCode !== getDailyCode()) {
+        console.log(DEBUG_PREFIX, "Invalid code submitted");
+        return res.status(403).json({ success: false });
+    }
+    req.session.authenticated = true;
+    console.log(DEBUG_PREFIX, "Client authenticated");
+    res.json({ success: true });
+});
 
-const camera = new CAMERA(config.camera);
-let activePreset = -1;
+app.post("/logout", (req, res) => {
+    // TODO do we need this???? and if so should we also have a GET logout?
+    req.session.destroy(() => { res.json({ success: true }); });
+});
+
+// --- local retrieval of daily code ---
+app.get("/daily-code", (req, res) => {
+    if (!isLocalRequest(req)) { 
+        return res.status(403).end(); 
+    }
+    res.json({ code: getDailyCode() });
+});
+
+// --- static files ---
+app.use("/public", express.static("public"));
+//app.use(express.static(path.join(__dirname, "public"))); // works but does not block index.html
+//app.use(express.static(path.join(__dirname, "public"))); // MOVED DOWN & CHANGED
+// --- app entry (protected) ---
+
+app.use("/help", express.static("help")) // where to place this?
+
+app.get("/", requireAuth, (req, res) => {
+    res.sendFile(PUBLIC_INDEX_PAGE);
+});
+
+// TODO
+
+// should new WebSocket.Server be defined here? or above?
+
+// --- websocket authentication ---
+server.on("upgrade", (req, socket, head) => {
+    sessionParser(req, {}, () => {
+
+        if (true) {
+            // tmp bypass auth
+            const isLocal = req.socket.remoteAddress === "::1" || req.socket.remoteAddress === "::ffff:127.0.0.1" || req.socket.remoteAddress === "127.0.0.1";
+
+            if (!isLocal && !req.session?.authenticated) {
+                console.log(DEBUG_PREFIX, "Rejected websocket");
+                socket.destroy();
+                return;
+            }
+        }
+console.log("hello from UPGRADE")
+
+        wss.handleUpgrade(req, socket, head, ws => {
+            wss.emit("connection", ws, req);
+        });
+    });
+});
+
 
 // ----------------------------------------------------
 // API: read config
@@ -88,10 +232,12 @@ function broadcastStatusTextToBrowsers(text, durationMs) {
 
 
 // ----------------------------------------------------
-// WebSocket: INCOMING from app.js
+// WebSocket: connection
 // ----------------------------------------------------
 
-wss.on("connection", async ws => {
+wss.on("connection", (ws, req) => onConnection(ws, req));
+
+async function onConnection(ws, req) {
     console.log(DEBUG_PREFIX, "Browser connected");
     // send X32 state
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
@@ -110,7 +256,11 @@ wss.on("connection", async ws => {
 
     // declare message handler
     ws.on("message", data => wsMessageHandler(data, ws));
-});
+}
+
+// ----------------------------------------------------
+// WebSocket: INCOMING messaging from app.js
+// ----------------------------------------------------
 
 async function wsMessageHandler(data, ws) {
     let msg;
@@ -234,6 +384,19 @@ async function wsMessageHandler(data, ws) {
             console.warn(DEBUG_PREFIX, "Unknown incoming message:", msg.type)
     }
 }
+
+// ----------------------------------------------------
+// X32 and OBS and CAMERA
+// ----------------------------------------------------
+
+const x32 = new X32(config.x32);
+x32.connect();
+
+const obs = new OBS(config.obs);
+obs.connect();
+
+const camera = new CAMERA(config.camera);
+let activePreset = -1;
 
 // ----------------------------------------------------
 // X32.js → server → browser
@@ -396,4 +559,5 @@ async function doWakeupCamera() {
 
 server.listen(LISTEN_PORT, () => {
     console.log(DEBUG_PREFIX, `Listening on http://localhost:${LISTEN_PORT}`);
+    console.log(DEBUG_PREFIX, `Today's access code: ${getDailyCode()}`);
 });
