@@ -1,39 +1,9 @@
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const WebSocket = require("ws");
-
-// ----------------------------------------
-// additional stuff for daily code login
-// ----------------------------------------
-const crypto = require("crypto");
-const session = require("express-session");
-const PUBLIC_LOGIN_PAGE = __dirname + "/public/login.html";
-const PUBLIC_INDEX_PAGE = __dirname + "/public/index.html";
-// ----------------------------------------
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
-const CODE_LENGTH = 5;
-const AUTH_SECRET = "j7WCyKse9BPjcQ3GcdtSxdf45wWL32Ke"; // TODO MOVE
-const SESSION_SECRET = "i2Y2oFtScwCBLIszHj7zE3ohcwQRPCIC";  // TODO MOVE
-// ----------------------------------------
-
-
-const config = require("./config/config");
-const X32 = require("./lib/x32");
-const OBS = require("./lib/obs.js");
-const CAMERA = require("./lib/camera.js");
-
-const app = express();
-const server = http.createServer(app);
-
-// const wss = new WebSocket.Server({ server }); // automatically allow websocket upgrade
-const wss = new WebSocket.Server({ noServer: true }); // require Daily Code first
-
-const DEBUG_PREFIX = "[server.js]";
-const LISTEN_PORT = 3000;
-
 /*
     OUTLINE
+
+    - modules/libraries
+    - constants
+    - object initiation
     - helpers for authentication
     - middleware stuff
         - session
@@ -55,12 +25,43 @@ const LISTEN_PORT = 3000;
     - START SERVER
 */
 
+// modules
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const WebSocket = require("ws");
+const crypto = require("crypto");               // for Daily Code authentication
+const session = require("express-session");     // for Daily Code authentication
 
-// --- helpers ---
-function isLocalRequest(req) {
-    const host = req.hostname;
-    const ip = req.ip;
-    return ( host === "localhost" || host === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1" );
+// more modules
+const CONFIG = require("./config/config");
+const X32 = require("./lib/x32");
+const OBS = require("./lib/obs.js");
+const CAMERA = require("./lib/camera.js");
+
+// constants
+const DEBUG_PREFIX = "[server.js]";
+const LISTEN_PORT = 3000;
+
+// constants - for Daily Code authentication
+const PUBLIC_LOGIN_PAGE = __dirname + "/public/login.html";
+const PUBLIC_INDEX_PAGE = __dirname + "/public/index.html";
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
+const CODE_LENGTH = 5; // also update limit on login.html
+const AUTH_SECRET =  "j7WCyKse9BPjcQ3GcdtSxdf45wWL32Ke"; // TODO MOVE
+const SESSION_SECRET = "i2Y2oFtScwCBLIszHj7zE3ohcwQRPCIC";  // TODO MOVE
+
+// object initiation
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ noServer: true }); // require Daily Code first.  ( Server({ server }) automatically allows websocket upgrade)
+
+// ----------------------------------------------------
+// HELPERS for authentication
+// ----------------------------------------------------
+
+function isLocalAddress(ip) {
+    return ( ip === "::1" || ip === "::ffff:127.0.0.1" || ip === "127.0.0.1" );
 }
 
 function getDailyCode() {
@@ -78,11 +79,12 @@ function getDailyCode() {
         const index = hash[i] % CODE_ALPHABET.length;
         code += CODE_ALPHABET[index];
     }
-    return code;
+    // return code;
+    return "ABCDE";
 }
 
 function requireAuth(req, res, next) {
-    if (isLocalRequest(req)) {
+    if (isLocalAddress(req.ip)) {
         return next();
     }
     if (req.session?.authenticated) {
@@ -119,11 +121,11 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
     const submittedCode = (req.body.code || "").toUpperCase().trim();
     if (submittedCode !== getDailyCode()) {
-        console.log(DEBUG_PREFIX, "Invalid code submitted");
+        console.log(DEBUG_PREFIX, `Invalid code submitted from ip: "${req.ip}" for host: "${req.host}"`);
         return res.status(403).json({ success: false });
     }
     req.session.authenticated = true;
-    console.log(DEBUG_PREFIX, "Client authenticated");
+    console.log(DEBUG_PREFIX, `Client (ip: "${req.ip}") authenticated, for host "${req.host}"`);
     res.json({ success: true });
 });
 
@@ -134,20 +136,17 @@ app.post("/logout", (req, res) => {
 
 // --- local retrieval of daily code ---
 app.get("/daily-code", (req, res) => {
-    if (!isLocalRequest(req)) { 
+    if (!isLocalAddress(req)) { 
         return res.status(403).end(); 
     }
     res.json({ code: getDailyCode() });
 });
 
 // --- static files ---
-app.use("/public", express.static("public"));
-//app.use(express.static(path.join(__dirname, "public"))); // works but does not block index.html
-//app.use(express.static(path.join(__dirname, "public"))); // MOVED DOWN & CHANGED
+app.use("/public", express.static(path.join(__dirname, "public"))); // TODO rewrite structure so that index.html is not public
+app.use("/help",   express.static(path.join(__dirname, "help"))); // where to place this?
+
 // --- app entry (protected) ---
-
-app.use("/help", express.static("help")) // where to place this?
-
 app.get("/", requireAuth, (req, res) => {
     res.sendFile(PUBLIC_INDEX_PAGE);
 });
@@ -159,18 +158,12 @@ app.get("/", requireAuth, (req, res) => {
 // --- websocket authentication ---
 server.on("upgrade", (req, socket, head) => {
     sessionParser(req, {}, () => {
-
-        if (true) {
-            // tmp bypass auth
-            const isLocal = req.socket.remoteAddress === "::1" || req.socket.remoteAddress === "::ffff:127.0.0.1" || req.socket.remoteAddress === "127.0.0.1";
-
-            if (!isLocal && !req.session?.authenticated) {
-                console.log(DEBUG_PREFIX, "Rejected websocket");
-                socket.destroy();
-                return;
-            }
+        const isLocal = isLocalAddress(req.socket.remoteAddress);
+        if (!isLocal && !req.session?.authenticated) {
+            console.log(DEBUG_PREFIX, `Rejected websocket (remoteAddress: ${req.socket.remoteAddress})`);
+            socket.destroy();
+            return;
         }
-console.log("hello from UPGRADE")
 
         wss.handleUpgrade(req, socket, head, ws => {
             wss.emit("connection", ws, req);
@@ -184,12 +177,12 @@ console.log("hello from UPGRADE")
 // ----------------------------------------------------
 
 app.get("/api/config", (req, res) => {
-
-    //res.json(config); // also exposes x32
+    // return only the portion below for the client app.js
     res.json({ 
-        ui: config.ui
-     }) // will keep same structure
-    // res.json({ config.ui }) will need some rewriting in server.js
+        ui: CONFIG.ui
+     }) 
+    // { ui: CONFIG.ui } will keep same structure as res.json(CONFIG) without exposing the rest
+    // { CONFIG.ui } will need some rewriting in app.js, but will be cleaner there
 });
 
 // ----------------------------------------------------
@@ -389,13 +382,13 @@ async function wsMessageHandler(data, ws) {
 // X32 and OBS and CAMERA
 // ----------------------------------------------------
 
-const x32 = new X32(config.x32);
+const x32 = new X32(CONFIG.x32);
 x32.connect();
 
-const obs = new OBS(config.obs);
+const obs = new OBS(CONFIG.obs);
 obs.connect();
 
-const camera = new CAMERA(config.camera);
+const camera = new CAMERA(CONFIG.camera);
 let activePreset = -1;
 
 // ----------------------------------------------------
