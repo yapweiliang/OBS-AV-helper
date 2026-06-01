@@ -6,13 +6,11 @@
     - object initiation
     - helpers for authentication
     - middleware stuff
-        - session
-        - various get, post; for login, etc
-        - static files
-        - websocket authentication
-
-    - server API (GET) for client to read config
-    - server API (POST) for client app to send x32 signals
+        - root, public
+        - protected
+            - get /api/config
+            - post /x32/action/:name
+    - websocket authentication and connection
     - websocket push to browsers (helpers)
     - websocket INCOMING from app.js
 
@@ -44,8 +42,6 @@ const DEBUG_PREFIX = "[server.js]";
 const LISTEN_PORT = 3000;
 
 // constants - for Daily Code authentication
-const PUBLIC_LOGIN_PAGE = __dirname + "/public/login.html";
-const PUBLIC_INDEX_PAGE = __dirname + "/public/index.html";
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
 const CODE_LENGTH = 5; // also update limit on login.html
 const AUTH_SECRET =  "j7WCyKse9BPjcQ3GcdtSxdf45wWL32Ke"; // TODO MOVE
@@ -60,8 +56,9 @@ const wss = new WebSocket.Server({ noServer: true }); // require Daily Code firs
 // HELPERS for authentication
 // ----------------------------------------------------
 
-function isLocalAddress(ip) {
-    return ( ip === "::1" || ip === "::ffff:127.0.0.1" || ip === "127.0.0.1" );
+function isLocal(req) {
+    const ip = (req.socket?.remoteAddress || "").replace("::ffff:", "");
+    return ( ip === "::1" || ip === "127.0.0.1" );
 }
 
 function getDailyCode() {
@@ -84,20 +81,23 @@ function getDailyCode() {
 }
 
 function requireAuth(req, res, next) {
-    if (isLocalAddress(req.ip)) {
+    if (isLocal(req)) {
         return next();
     }
     if (req.session?.authenticated) {
         return next();
     }
-    return res.status(401).sendFile(PUBLIC_LOGIN_PAGE);
+    return res.status(401).sendFile(LOGIN_PAGE);
 }
 
 // ----------------------------------------------------
 // Middleware
 // ----------------------------------------------------
 
-// --- SESSION ---
+const LOGIN_PAGE = path.join(__dirname, "frontend", "login", "login.html");
+const INDEX_PAGE = path.join(__dirname, "frontend", "app", "index.html");
+
+// global middleware
 const sessionParser = session({
     secret: SESSION_SECRET,
     resave: false,
@@ -110,14 +110,16 @@ const sessionParser = session({
 app.use(sessionParser)
 app.use(express.json());
 
-// --- LOGIN, LOGOUT ---
+// root redirect
+app.get("/", requireAuth, (req, res) => { res.sendFile(INDEX_PAGE); });
 
-// public login page
-app.get("/login", (req, res) => {
-    res.sendFile(PUBLIC_LOGIN_PAGE);
-});
+// public resources
+app.use( "/assets", express.static(path.join(__dirname, "frontend/assets")) );
+app.use( "/login",  express.static(path.join(__dirname, "frontend/login")) );
+app.use( "/help",   express.static(path.join(__dirname, "frontend/help")) );
 
-// login API
+// public API (login/logout)
+app.get("/login", (req, res) => { res.sendFile(LOGIN_PAGE); });
 app.post("/login", (req, res) => {
     const submittedCode = (req.body.code || "").toUpperCase().trim();
     if (submittedCode !== getDailyCode()) {
@@ -129,54 +131,23 @@ app.post("/login", (req, res) => {
     res.json({ success: true });
 });
 
-app.post("/logout", (req, res) => {
-    // TODO do we need this???? and if so should we also have a GET logout?
-    req.session.destroy(() => { res.json({ success: true }); });
-});
+// for testing purposes, as there is no real need to logout
+app.get("/logout",  (req, res) => { req.session.destroy(() => { res.sendFile(LOGIN_PAGE); }); });
+app.post("/logout", (req, res) => { req.session.destroy(() => { res.sendFile(LOGIN_PAGE); }); });
 
-// --- local retrieval of daily code ---
+// local retrieval of daily code
 app.get("/daily-code", (req, res) => {
-    if (!isLocalAddress(req)) { 
-        return res.status(403).end(); 
+    if (!isLocal(req)) { 
+        return res.status(403).end(); // 403 = forbidden
     }
     res.json({ code: getDailyCode() });
 });
 
-// --- static files ---
-app.use("/public", express.static(path.join(__dirname, "public"))); // TODO rewrite structure so that index.html is not public
-app.use("/help",   express.static(path.join(__dirname, "help"))); // where to place this?
+// Protected resources
+// -------------------
+app.use("/app", requireAuth, express.static(path.join(__dirname, "frontend/app")));
 
-// --- app entry (protected) ---
-app.get("/", requireAuth, (req, res) => {
-    res.sendFile(PUBLIC_INDEX_PAGE);
-});
-
-// TODO
-
-// should new WebSocket.Server be defined here? or above?
-
-// --- websocket authentication ---
-server.on("upgrade", (req, socket, head) => {
-    sessionParser(req, {}, () => {
-        const isLocal = isLocalAddress(req.socket.remoteAddress);
-        if (!isLocal && !req.session?.authenticated) {
-            console.log(DEBUG_PREFIX, `Rejected websocket (remoteAddress: ${req.socket.remoteAddress})`);
-            socket.destroy();
-            return;
-        }
-
-        wss.handleUpgrade(req, socket, head, ws => {
-            wss.emit("connection", ws, req);
-        });
-    });
-});
-
-
-// ----------------------------------------------------
-// API: read config
-// ----------------------------------------------------
-
-app.get("/api/config", (req, res) => {
+app.get("/api/config", requireAuth, (req, res) => {
     // return only the portion below for the client app.js
     res.json({ 
         ui: CONFIG.ui
@@ -185,11 +156,9 @@ app.get("/api/config", (req, res) => {
     // { CONFIG.ui } will need some rewriting in app.js, but will be cleaner there
 });
 
-// ----------------------------------------------------
-// API: INCOMING from HTTP POST
-// ----------------------------------------------------
+app.post("/x32/action/:name", requireAuth, processX32Post);
 
-app.post("/x32/action/:name", (req, res) => {
+function processX32Post(req, res, next) {
     // POST received from public/app.js for X32
 
     const signalId = req.params.name;
@@ -203,30 +172,29 @@ app.post("/x32/action/:name", (req, res) => {
         console.error( DEBUG_PREFIX, "Action error:", err );
         res.status(500).json({ ok: false, error: err.message });
     }
-});
+};
 
-// ----------------------------------------------------
-// WebSocket: push state to browser
-// ----------------------------------------------------
+// final 404 handling
+// ------------------
+app.use((req, res) => res.status(404).send("Not found"));
 
-function broadcastToBrowsers(obj) {
+// ====================================================
+// WebSocket: authentication and connection
+// ====================================================
 
-    const msg = JSON.stringify(obj);
+server.on("upgrade", (req, socket, head) => {
+    sessionParser(req, {}, () => {
+        if (!isLocal(req) && !req.session?.authenticated) {
+            console.log(DEBUG_PREFIX, `Rejected websocket (remoteAddress: ${req.socket.remoteAddress})`);
+            socket.destroy();
+            return;
+        }
 
-    wss.clients.forEach(client => {
-        if ( client.readyState === WebSocket.OPEN ) { client.send(msg); }
+        wss.handleUpgrade(req, socket, head, ws => {
+            wss.emit("connection", ws, req);
+        });
     });
-}
-
-function broadcastStatusTextToBrowsers(text, durationMs) {
-    broadcastToBrowsers({ type: "flashStatusText", text: text, durationMs: durationMs });
-    // TODO what happens if message omits durationMs - will the final function choose default duration?
-}
-
-
-// ----------------------------------------------------
-// WebSocket: connection
-// ----------------------------------------------------
+});
 
 wss.on("connection", (ws, req) => onConnection(ws, req));
 
@@ -249,6 +217,22 @@ async function onConnection(ws, req) {
 
     // declare message handler
     ws.on("message", data => wsMessageHandler(data, ws));
+}
+
+// ----------------------------------------------------
+// WebSocket: OUTGOING push to client browsers
+// ----------------------------------------------------
+
+function broadcastToBrowsers(obj) {
+    const msg = JSON.stringify(obj);
+    wss.clients.forEach(client => {
+        if ( client.readyState === WebSocket.OPEN ) { client.send(msg); }
+    });
+}
+
+function broadcastStatusTextToBrowsers(text, durationMs) {
+    broadcastToBrowsers({ type: "flashStatusText", text: text, durationMs: durationMs });
+    // TODO what happens if message omits durationMs - will the final function choose default duration?
 }
 
 // ----------------------------------------------------
@@ -378,9 +362,9 @@ async function wsMessageHandler(data, ws) {
     }
 }
 
-// ----------------------------------------------------
+// ====================================================
 // X32 and OBS and CAMERA
-// ----------------------------------------------------
+// ====================================================
 
 const x32 = new X32(CONFIG.x32);
 x32.connect();
@@ -546,9 +530,9 @@ async function doWakeupCamera() {
     return e;    
 };
 
-// ----------------------------------------------------
+// ====================================================
 // Start server
-// ----------------------------------------------------
+// ====================================================
 
 server.listen(LISTEN_PORT, () => {
     console.log(DEBUG_PREFIX, `Listening on http://localhost:${LISTEN_PORT}`);
