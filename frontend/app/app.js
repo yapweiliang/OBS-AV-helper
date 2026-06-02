@@ -643,9 +643,14 @@ function updateX32Faders() {
         const el = document.getElementById(fdr.id);
         if (!el) continue;
 
-        const value = X32_STATE[fdr.signalId];
-        // TODO convert value to dB, or do the conversion at the display end?
-        el.querySelector(".label").textContent = value;
+        let value;
+        const f = X32_STATE[fdr.signalId];
+        if (f >= 0.5) { value = (f * 40) - 30 }
+        else if (f >= 0.25) { value = (f * 80) - 50 }
+        else if (f >= 0.0625) { value = (f * 160) - 70 }
+        else if (f >= 0) { value = (f * 480) - 90 }
+        value = (f === 0) ? '-∞' : `${(value>0)?'+':''}${value.toFixed(1)}`;
+        el.querySelector(".label").textContent = `${value} dB`;
     }
 }
 
