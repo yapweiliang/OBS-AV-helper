@@ -882,7 +882,6 @@ async function runHoldAction(actionName, button) {
         triggerX32Action(signalId);
     } else if (allowedMessages.includes(actionName)) {
         // then other (obs & camera) buttons
-        console.log()
         socket.send(JSON.stringify({ type: actionName }));
     } else {
         // then special buttons

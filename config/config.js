@@ -1,11 +1,14 @@
+const isDev = (process.env.NODE_ENV === 'development');
+
 module.exports = {
 
     obs: {
-        host: "localhost", // `ws://${host}`
+        // `ws://${host}`
+        host: isDev ? "localhost" : "192.168.32.100",
         port: 4455,
-        password: "6hzHSBJSkq7KvEOS",
+        password: process.env.OBS_PASSWORD,
 
-        PTZ_ACTION_DEVICE_ID: 1,
+        PTZ_ACTION_DEVICE_ID: isDev ? 1 : 3,
 
         OVERLAY_SCENENAME: "---OVERLAY---",
         PARENTS_OVERLAY_SOURCENAME: "parents_overlay",
@@ -15,13 +18,13 @@ module.exports = {
     },
 
     camera: {
-        CAMERA_IP: "192.168.32.107"  // `http://${config.CAMERA_IP}`
-        //CAMERA_IP: "ubuntu-server.rarebits:5000"
+        // `http://${config.CAMERA_IP}`
+        CAMERA_IP: isDev ? "ubuntu-server.rarebits:5000" : "192.168.32.107"  
     },
 
     x32: {
 
-        host: "192.168.56.1",
+        host: isDev ? "192.168.56.1" : "192.168.32.11",
         port: 10023,
         localPort: 10024,
 

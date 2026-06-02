@@ -24,6 +24,8 @@
 */
 
 // modules
+require("dotenv").config();
+
 const express = require("express");
 const http = require("http");
 const path = require("path");
@@ -44,8 +46,8 @@ const LISTEN_PORT = 3000;
 // constants - for Daily Code authentication
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
 const CODE_LENGTH = 5; // also update limit on login.html
-const AUTH_SECRET =  "j7WCyKse9BPjcQ3GcdtSxdf45wWL32Ke"; // TODO MOVE
-const SESSION_SECRET = "i2Y2oFtScwCBLIszHj7zE3ohcwQRPCIC";  // TODO MOVE
+const AUTH_SECRET =  process.env.AUTH_SECRET;
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // object initiation
 const app = express();
