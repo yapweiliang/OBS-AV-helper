@@ -2,6 +2,8 @@ let CONFIG = null;
 
 let socket = null;          // node server socket
 
+let myInfoDialogBox = null; // https://keejelo.github.io/EasyDialogBox/documentation.html
+
 // X32 states
 let X32_STATE = {};
 
@@ -273,7 +275,7 @@ console.log("updateClientFocusState received focus_mode", msg.focus_mode);
             flashStatusText(msg.text, msg.durationMs);
             break;
         case "displayCameraSettings":
-            console.log("TODO display camera settings", msg.text)
+            showCameraInfoDialog((msg.text)?msg.text:"API call failed");
             break;
 
         default:
@@ -558,6 +560,18 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
             flashStatusTextTimeoutID = setTimeout(flashStatusTextTimeout, durationMs);
         }
     }
+}
+
+function showCameraInfoDialog(text) {
+    console.log(myInfoDialogBox)
+    myInfoDialogBox = EasyDialogBox.create("infoDialog", "dlg dlg-disable-clickout dlg-rounded", "Camera settings", text);
+    myInfoDialogBox.addButton(
+        "Copy to Clipboard",
+        () => { navigator.clipboard.writeText(myInfoDialogBox.strMessage) },
+        0
+    );
+    myInfoDialogBox.onClose = myInfoDialogBox.destroy;
+    myInfoDialogBox.show()
 }
 
 // ----------------------------------------------------

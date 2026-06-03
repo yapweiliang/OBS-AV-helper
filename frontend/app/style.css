@@ -165,7 +165,7 @@ button:disabled {
 body { 
     font-family: sans-serif;
     font-size: small;
-    background-color: var(--bg_base); 
+    background-color: var(--bg_base);
     color: var(--text);
 
     padding: 20px;
