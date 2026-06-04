@@ -593,7 +593,7 @@ async function showDailyCode() {
         }
     } else {
         const dailyCode = await res.json();
-        str = `Today's login code is <b>${dailyCode.code}</b>`;
+        str = `Today's login code is <span style="font-size: 2rem;"><b>${dailyCode.code}</b></span>`;
     }
     flashStatusText(str);
 }

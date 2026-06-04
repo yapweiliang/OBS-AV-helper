@@ -78,8 +78,7 @@ function getDailyCode() {
         const index = hash[i] % CODE_ALPHABET.length;
         code += CODE_ALPHABET[index];
     }
-    // return code;
-    return "ABCDE";
+    return code;
 }
 
 function requireAuth(req, res, next) {
