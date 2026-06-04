@@ -25,7 +25,7 @@
 }
 
 .status-buttons-width {
-    width: 8em;
+    width: 11em;
 }
 
 .status-tally-area {
@@ -43,4 +43,8 @@
 .status-text-area--warn {
     background-color: var(--red6);
     /* color: var(--yellow1) */
+}
+
+.status-buttons-area {
+    text-align: right;
 }

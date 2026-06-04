@@ -52,15 +52,20 @@ const RED_DOT   = '🔴';
 const WHITE_DOT = '⚪';
 
 const OTHER_OBS_ACTION_BUTTONS = [
-        'btnOverlayParents', 'btnOverlayCustom',
-        'btnStartStopStream'
-    ];
+    'btnOverlayParents', 'btnOverlayCustom',
+    'btnStartStopStream'
+];
 
 const OTHER_CAMERA_ACTION_BUTTONS = [
-        'btnToggleAutoFocus', 'btnOnePushFocus', 'btnOnePushWhiteBalance', 
-        'btnResetCamera', 'btnRestartCamera', 
-        'selFocusZoneSelect'
-    ];
+    'btnToggleAutoFocus', 'btnOnePushFocus', 'btnOnePushWhiteBalance',
+    'btnResetCamera', 'btnRestartCamera',
+    'selFocusZoneSelect',
+    'infoButton'
+];
+
+const OTHER_UI_ACTION_BUTTONS = [
+    'helpButton', 'codeButton'
+];
 
 const FOCUS_ZONES = [
     { id: 0, label: 'top'    },
@@ -77,6 +82,7 @@ const eid_btnToggleAutoFocus  = document.getElementById('btnToggleAutoFocus');
 const eid_btnOnePushFocus     = document.getElementById('btnOnePushFocus');
 const eid_infoBtn             = document.getElementById('infoButton');
 const eid_helpBtn             = document.getElementById('helpButton');
+const eid_codeBtn             = document.getElementById('codeButton');
 
 const X32_TAG = "__X32__";
 
@@ -121,8 +127,10 @@ async function initialise() {
 
     // add listeners: other
     eid_selFocusZoneSelect.addEventListener('change', () => runHoldAction("setFocusZone", eid_selFocusZoneSelect));
-    eid_infoBtn.addEventListener('click',             () => runHoldAction("getCameraSettings", eid_infoBtn));
-    //eid_helpBtn.addEventListener('click', showHelp);
+
+    eid_infoBtn.addEventListener('click', () => runHoldAction("getCameraSettings",  eid_infoBtn));
+    eid_codeBtn.addEventListener('click', () => runHoldAction("showCode",           eid_codeBtn));
+    eid_helpBtn.addEventListener('click', () => runHoldAction("showHelp",           eid_helpBtn));
 
     connectWebSocket(); 
     // socket open calls onSocketOpen(), which
@@ -563,7 +571,6 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
 }
 
 function showCameraInfoDialog(text) {
-    console.log(myInfoDialogBox)
     myInfoDialogBox = EasyDialogBox.create("infoDialog", "dlg dlg-disable-clickout dlg-rounded", "Camera settings", text);
     myInfoDialogBox.addButton(
         "Copy to Clipboard",
@@ -572,6 +579,23 @@ function showCameraInfoDialog(text) {
     );
     myInfoDialogBox.onClose = myInfoDialogBox.destroy;
     myInfoDialogBox.show()
+}
+
+async function showDailyCode() {
+    const res = await fetch("/daily-code");
+    let str;
+    
+    if (!res.ok) {
+        if (res.status == 403) {
+            str = `Login codes are not revealed on remote devices`;
+        } else {
+            str = res.statusText
+        }
+    } else {
+        const dailyCode = await res.json();
+        str = `Today's login code is <b>${dailyCode.code}</b>`;
+    }
+    flashStatusText(str);
 }
 
 // ----------------------------------------------------
@@ -612,6 +636,11 @@ function enableActionButtons(enabled = true) {
         el.disabled = !enabled;
     }
 
+    // other UI buttons
+    for (const btn of OTHER_UI_ACTION_BUTTONS) {
+        const el = document.getElementById(btn);
+        el.disabled = !enabled;
+    }
 
     // overall background
     if (enabled) {
@@ -911,6 +940,12 @@ async function runHoldAction(actionName, button) {
         switch (actionName) {
             case "setFocusZone":
                 socket.send(JSON.stringify({ type: actionName, id: Number(eid_selFocusZoneSelect.value) }));
+                break;
+            case "showCode":
+                showDailyCode();
+                break;
+            case "showHelp":
+                console.log("PLACEHOLDER for actionName:", actionName);
                 break;
             default:
                 // report unknown action
