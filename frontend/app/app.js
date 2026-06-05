@@ -44,6 +44,7 @@ const eid_statusTextArea = document.getElementById('statusTextArea');
 const eid_statusText = document.getElementById('statusText');
 const eid_tallyTextArea = document.getElementById('tallyTextArea');
 const eid_tallyText = document.getElementById('tallyText'); // use for OBS STATE
+const eid_developmentStatus = document.getElementById('developmentStatus');
 const nothingToFlash = ""; // what to display when the message is cleared
 
 const GREEN_DOT = '🟢';
@@ -122,15 +123,22 @@ async function initialise() {
     const container = document.getElementById(PRESETS_TABLE_CONTAINER_ELEMENTID);
     if (container) { container.addEventListener("click", presetsTableActions); };
 
-    // add listeners: hold-button class uses runHoldAction to process messages
+    // add listeners: hold-button class uses runHoldAction to process button actions
     document.querySelectorAll(".hold-button").forEach(initHoldButton); // includes initialising the x32 confirm-buttons
 
-    // add listeners: other
+    // add listeners: other - also to use runHoldACtion to process button actions
     eid_selFocusZoneSelect.addEventListener('change', () => runHoldAction("setFocusZone", eid_selFocusZoneSelect));
 
     eid_infoBtn.addEventListener('click', () => runHoldAction("getCameraSettings",  eid_infoBtn));
     eid_codeBtn.addEventListener('click', () => runHoldAction("showCode",           eid_codeBtn));
     eid_helpBtn.addEventListener('click', () => runHoldAction("showHelp",           eid_helpBtn));
+
+    if (!window.location.hostname.includes("localhost") || !CONFIG.ui.isDevelopment) {
+        // remove contextmenu except on local development machine
+        document.addEventListener("contextmenu", e => { e.preventDefault(); });
+    } else {
+        eid_developmentStatus.innerHTML = '<mark>: LOCAL DEVELOPMENT MACHINE :</mark>';
+    }
 
     connectWebSocket(); 
     // socket open calls onSocketOpen(), which

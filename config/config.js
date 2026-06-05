@@ -47,6 +47,8 @@ module.exports = {
     },
 
     ui: {
+        isDevelopment: isDev,
+
         // actions
         buttons: [
             { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
