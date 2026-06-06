@@ -135,7 +135,11 @@ async function initialise() {
     eid_helpBtn.addEventListener('click', () => runHoldAction("showHelp",           eid_helpBtn));
     eid_fullBtn.addEventListener('click', async () => {
         try {
-            await document.documentElement.requestFullscreen();
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else {
+                await document.documentElement.requestFullscreen();
+            }
         } catch (err) {
             console.error(err);
         }
