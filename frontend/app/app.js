@@ -83,7 +83,9 @@ const eid_helpBtn            = document.getElementById('helpButton');
 const eid_codeBtn            = document.getElementById('codeButton');
 const eid_fullBtn            = document.getElementById('fullScreenButton');
 
+// tags for message handling
 const X32_TAG = "__X32__";
+const OBS_TAG = "__OBS__";
 
 /*
     OUTLINE
@@ -115,21 +117,24 @@ async function initialise() {
     // PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
     PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
-    renderUI(); // includes obs scene buttons (onclick), x32 buttons (onclick, and hold-button class)
+    function makeHoldButton(button, action) {
+        button.classList.add('hold-button');
+        button.dataset.action = action;
+    }
 
-    // add listeners: presetsTable
-    const container = document.getElementById(PRESETS_TABLE_CONTAINER_ELEMENTID);
-    if (container) { container.addEventListener("click", presetsTableActions); };
+    renderUI(); // includes obs scene buttons, x32 buttons
+
+    // configure other buttons
+    makeHoldButton(eid_infoBtn, "getCameraSettings");
+    makeHoldButton(eid_codeBtn, "showCode");
+    makeHoldButton(eid_helpBtn, "showHelp");
 
     // add listeners: hold-button class uses runHoldAction to process button actions
-    document.querySelectorAll(".hold-button").forEach(initHoldButton); // includes initialising the x32 confirm-buttons
+    document.querySelectorAll(".hold-button").forEach(initHoldButton);
 
     // add listeners: other - also to use runHoldACtion to process button actions
     eid_selFocusZoneSelect.addEventListener('change', () => runHoldAction("setFocusZone", eid_selFocusZoneSelect));
 
-    eid_infoBtn.addEventListener('click', () => runHoldAction("getCameraSettings",  eid_infoBtn));
-    eid_codeBtn.addEventListener('click', () => runHoldAction("showCode",           eid_codeBtn));
-    eid_helpBtn.addEventListener('click', () => runHoldAction("showHelp",           eid_helpBtn));
     eid_fullBtn.addEventListener('click', async () => {
         try {
             if (document.fullscreenElement) {
@@ -141,7 +146,6 @@ async function initialise() {
             console.error(err);
         }
     });
-
 
     if (!window.location.hostname.includes("localhost") || !CONFIG.ui.isDevelopment) {
         // remove contextmenu except on local development machine
@@ -189,40 +193,6 @@ async function triggerX32Action(signalId) {
 
 function triggerOBSScene(sceneName) {
     socket.send(JSON.stringify({ type: "callOBSScene", sceneName: sceneName}));
-}
-
-
-function presetsTableActions(event) {
-    if (event.target.id === "togglePresets") {
-        showAllPresets = !showAllPresets;
-        renderPresetsTable(); // TODO with the active Preset?
-        return;
-    };
-
-    // not sure if closest button is needed - apparently clicking inside a text-span might not be deemed a button???
-    // const btn = event.target.closest("button");
-    // if (!btn) return;
-
-    const action = event.target.dataset.action;
-    const id = Number(event.target.dataset.id);
-
-    if (action === "call") {
-        socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id})); // App.Camera.callPreset(id);
-        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id})); // enableSetButton(id); TODO is this needed
-        socket.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: id})); // //highlightCameraPreset(id);  also sets activePreset   
-        return;
-    }
-
-    if (action === "set") {
-        if (!event.target.disabled) {
-            socket.send(JSON.stringify({ 
-                type: "setCameraPreset", 
-                preset_id: id, 
-                preset_name: CAMERA_PRESETS.find(p => p.PresetNumber === id)?.PresetName
-            }));
-        }
-        return;
-    }
 }
 
 // ----------------------------------------------------
@@ -405,14 +375,15 @@ function renderX32Buttons() {
         el.id = btn.id;
         el.textContent = btn.label;
 
+        el.classList.add('hold-button');
+        el.dataset.action = X32_TAG + btn.signalId;
+
         if (btn.confirm == true) {
             el.classList.add('hold-button', 'button--prompt');
-            el.dataset.action = X32_TAG + btn.signalId;
             el.dataset.holdMs = 1000;
             el.title = btn.helpText || "no help text defined";
-        } else {
-            el.onclick = () => triggerX32Action(btn.signalId, btn.confirm); // TOD can remove btn.confirm
         }
+        // else { el.dataset.holdMs = 0; } // not needed as default = 0
 
         container.appendChild(el);
     }
@@ -483,32 +454,29 @@ function renderPresetsTable(activePreset = -1) {
             const row = document.createElement("tr");
 
             row.innerHTML = `
-                <td style="text-align:right">${preset.PresetNumber}</td>
+                <td style="text-align:right">
+                    ${preset.PresetNumber}
+                </td>
                 <td>
-                    <button class="call-btn" data-action="call" data-id="${preset.PresetNumber}">
+                    <button class="call-btn hold-button" 
+                            data-action="callPreset"
+                            data-id="${preset.PresetNumber}">
                         ${preset.PresetName}
                     </button>
                 </td>
                 <td>
-                    <button class="set-btn"
-                            data-action="set"
+                    <button class="set-btn hold-button"
+                            data-action="setPreset"
                             data-id="${preset.PresetNumber}"
                             disabled>
                         Set ${preset.PresetNumber}
                     </button>
-                </td>
-            `;
+                </td>`;
 
             table.appendChild(row);
         });
         container.appendChild(table);
-        if (CAMERA_PRESETS.length > PRESETS_TABLE_MINIMUM_ROWS) {
-            const toggleBtn = document.createElement("button");
-            toggleBtn.classList.add("call-btn");
-            toggleBtn.textContent = showAllPresets ? "Less Presets..." : "More Presets...";
-            toggleBtn.id = "togglePresets";
-            container.appendChild(toggleBtn);
-        };
+
         if (activePreset >= 0) {
             highlightCameraPreset(activePreset); // re-highlight if it was already highlighted
         }
@@ -538,7 +506,10 @@ function renderOBSButtons() {
 
         el.id = btn.id;
         el.textContent = btn.label;
-        el.onclick = () => triggerOBSScene(btn.sceneName);
+
+        el.classList.add('hold-button');
+        el.dataset.action = OBS_TAG + btn.sceneName;
+        // el.dataset.holdMs = 0; // not needed as default = 0
 
         container.appendChild(el);
     }
@@ -959,6 +930,23 @@ async function runHoldAction(actionName, button) {
         // handle X32 hold-button buttons (with confirm flag, e.g. initialise)
         const signalId = actionName.replace(X32_TAG, '');
         triggerX32Action(signalId);
+    } else if (actionName.startsWith(OBS_TAG)) {
+        const sceneName = actionName.replace(OBS_TAG, '');
+        triggerOBSScene(sceneName);
+    } else if (actionName == "callPreset") {
+        // handle call camera preset
+        const id = Number(button.dataset.id);
+        socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id })); // App.Camera.callPreset(id);
+        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id })); // enableSetButton(id); TODO is this needed
+        socket.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: id })); // //highlightCameraPreset(id);  also sets activePreset   
+    } else if (actionName == "setPreset") {
+        // handle set camera preset
+        const id = Number(button.dataset.id);
+        socket.send(JSON.stringify({
+            type: "setCameraPreset",
+            preset_id: id,
+            preset_name: CAMERA_PRESETS.find(p => p.PresetNumber === id)?.PresetName
+        }));
     } else if (allowedMessages.includes(actionName)) {
         // then other (obs & camera) buttons
         socket.send(JSON.stringify({ type: actionName }));
