@@ -23,6 +23,7 @@ module.exports = {
     },
 
     x32: {
+        isDevelopment: isDev,
 
         host: isDev ? "192.168.56.1" : "192.168.32.11",
         port: 10023,

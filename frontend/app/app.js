@@ -6,6 +6,12 @@ let myInfoDialogBox = null; // https://keejelo.github.io/EasyDialogBox/documenta
 
 // X32 states
 let X32_STATE = {};
+let lastSelectedX32SnippetButton = null;
+let lastHighlightedX32SnippetButton = null;
+const SNIPPET_BUTTON_DIM_DURATION_MS = 5; // 5ms seems safe on local dev
+const SNIPPET_BUTTON_HIGHLIGHT_DURATION_MS = 5000;
+let lastSelectedTimeoutId = null;
+let lastHighlightedTimeoutId = null;
 
 // PresetsTable states
 let CAMERA_PRESETS = null;
@@ -114,7 +120,6 @@ async function initialise() {
 
     CONFIG = await loadConfig();
     CAMERA_PRESETS = CONFIG.ui.cameraPresets || null;
-    // PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
     PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
     function makeHoldButton(button, action) {
@@ -216,13 +221,54 @@ function onSocketMessage(event) {
 
     switch(msg.type) {
         // X32-related messages
-        case "x32StateChanged":
+        case "x32StateChanged":     // e.g. mute state, fader state
             X32_STATE = msg.state;
             updateX32ControlsStatus();
             break;
+        case "dimX32SnippetButton":
+            if (lastSelectedX32SnippetButton) {
+                // cancel last one if still dimmed
+                lastSelectedX32SnippetButton.classList.remove("button--dimmed");
+            }
+            lastSelectedX32SnippetButton = document.getElementById(msg.btnId);
+            lastSelectedX32SnippetButton.classList.add("button--dimmed");
+
+            clearTimeout(lastSelectedTimeoutId);
+            lastSelectedTimeoutId = null;
+            lastSelectedTimeoutId = setTimeout(() => {
+                lastSelectedX32SnippetButton.classList.remove("button--dimmed");
+                lastSelectedX32SnippetButton = null; // wait a short while to allow x32LoadSuccess
+            }, SNIPPET_BUTTON_DIM_DURATION_MS)
+            break;
         case "x32LoadSuccess":
-            // TODO report snippet load success
-            console.log("x32LoadSuccess PLACEHOLDER");
+            // assume this is a load success for snippet (checked at server.js)
+
+            if (lastSelectedX32SnippetButton) {
+
+                if (lastHighlightedX32SnippetButton) {
+                    // cancel last one if still highlighted
+                    lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
+                }
+                lastHighlightedX32SnippetButton = lastSelectedX32SnippetButton;
+                lastHighlightedX32SnippetButton.classList.remove("button--dimmed"); // not sure why highlighted not shown until dimmed removed
+                lastHighlightedX32SnippetButton.classList.add("button--highlighted");
+
+                clearTimeout(lastHighlightedTimeoutId);
+                lastHighlightedTimeoutId = null;
+                lastHighlightedTimeoutId = setTimeout(() => {
+                    lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
+                    lastHighlightedX32SnippetButton = null;
+                }, SNIPPET_BUTTON_HIGHLIGHT_DURATION_MS)
+               
+            } else {
+                // in this situation a different device has selected a snippet
+                // therefore we need to clear our previous highlight
+                if (lastHighlightedX32SnippetButton) {
+                    // cancel last one if still highlighted
+                    lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
+                    lastHighlightedX32SnippetButton = null;
+                }
+            }
             break;
         case "x32HeartbeatsMissed":
             x32HeartbeatsMissedCounter = msg.state;

@@ -117,6 +117,10 @@ button:disabled {
     --button-bg-hover: var(--green4);
 }
 
+.button--dimmed {
+    --button-bg: var(--grey2);
+}
+
 .button--inline {
     width: max-content;
 }

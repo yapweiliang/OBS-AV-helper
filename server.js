@@ -166,6 +166,11 @@ function processX32Post(req, res, next) {
     const signalId = req.params.name;
     console.log( DEBUG_PREFIX, "ACTION:", signalId );
 
+    if (CONFIG.x32.signals[signalId].type == "snippet") {
+        const btnId = CONFIG.ui.buttons.find(p => p.signalId === signalId)?.id;
+        broadcastToBrowsers({ type: "dimX32SnippetButton", btnId: btnId });
+    }
+
     try {
         x32.executeAction(signalId);
         res.json({ ok: true, action: signalId });
@@ -254,7 +259,6 @@ async function wsMessageHandler(data, ws) {
 
         // messages from app.js for other clients
         // --------------------------------------
-        // (flashStatusText from obs.js and camera.js are handled separately)
         case "flashStatusText":
             broadcastToBrowsers({ type: "flashStatusText", text: msg.text, durationMs: msg.durationMs });
             break;
@@ -386,7 +390,10 @@ x32.on("stateChanged", state => {
 });
 
 x32.on("loadSuccess", state => {
-    broadcastToBrowsers({ type: "x32LoadSuccess", state });
+    // x32 emulator errorneously returns libchan when it should return snippet
+    if (state.success && state.type == ((CONFIG.x32.isDevelopment) ? "libchan" : "snippet")) {
+        broadcastToBrowsers({ type: "x32LoadSuccess", state });
+    }
 });
 
 x32.on("heartbeatsMissed", state => {
