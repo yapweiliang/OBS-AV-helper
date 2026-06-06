@@ -133,6 +133,14 @@ async function initialise() {
     eid_infoBtn.addEventListener('click', () => runHoldAction("getCameraSettings",  eid_infoBtn));
     eid_codeBtn.addEventListener('click', () => runHoldAction("showCode",           eid_codeBtn));
     eid_helpBtn.addEventListener('click', () => runHoldAction("showHelp",           eid_helpBtn));
+    eid_fullBtn.addEventListener('click', async () => {
+        try {
+            await document.documentElement.requestFullscreen();
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
 
     if (!window.location.hostname.includes("localhost") || !CONFIG.ui.isDevelopment) {
         // remove contextmenu except on local development machine
@@ -140,6 +148,10 @@ async function initialise() {
     } else {
         eid_developmentStatus.innerHTML = '<mark>: LOCAL DEVELOPMENT MACHINE :</mark>';
     }
+
+    // below are not supported on my devices:
+    // - await navigator.wakeLock.request("screen");
+    // - await screen.orientation.lock(...)
 
     connectWebSocket(); 
     // socket open calls onSocketOpen(), which

@@ -133,7 +133,8 @@ button:disabled {
 
 .button--icon {
     width: auto;
-    min-width: 3ch;
+    min-width: 1em;
+    line-height: 1; /* keep UTF8 icon/text heights the same */
 }
 
 .buttons-table {
@@ -146,12 +147,12 @@ button:disabled {
 .buttons-table td {
     border: none;
 }
-/*
+
 .row-of-buttons-control {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-}*/
+    gap: 1em;
+}
 
 .focus-zone-select {
     width: 9em;
