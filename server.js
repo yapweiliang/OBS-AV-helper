@@ -44,8 +44,9 @@ const DEBUG_PREFIX = "[server.js]";
 const LISTEN_PORT = 3000;
 
 // constants - for Daily Code authentication
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
-const CODE_LENGTH = 5; // also update limit on login.html
+// const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
+const CODE_ALPHABET = "23456789"; // simplify to numeric (see also login.html)
+const CODE_LENGTH = 4; // also update limit on login.html
 const AUTH_SECRET =  process.env.AUTH_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
