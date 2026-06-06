@@ -11,8 +11,6 @@ let X32_STATE = {};
 let CAMERA_PRESETS = null;
 //let activePreset = -1; // -1 means no active preset
 let setButtonTimeoutHandle = null;
-let rowHighlightTimeoutHandle = null;
-let showAllPresets = false;
 
 // camera states
 let cameraTallyLightColor = "";
@@ -35,7 +33,6 @@ const OBS_SCENE_BUTTONS_CONTAINER = "obsSceneButtonsContainer";
 const eid_obsCurrentScene = document.getElementById("obsCurrentScene");
 
 const PRESETS_TABLE_CONTAINER_ELEMENTID = "presetTableInlineContainer";
-let PRESETS_TABLE_MINIMUM_ROWS;
 let PRESETS_TABLE_TIMEOUT_MS;
 
 const defaultFlashTimeoutDurationMs = 5000;
@@ -115,7 +112,7 @@ async function initialise() {
 
     CONFIG = await loadConfig();
     CAMERA_PRESETS = CONFIG.ui.cameraPresets || null;
-    PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
+    // PRESETS_TABLE_MINIMUM_ROWS = CONFIG.ui.PRESETS_TABLE_MINIMUM_ROWS || 2;
     PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
     renderUI(); // includes obs scene buttons (onclick), x32 buttons (onclick, and hold-button class)
@@ -476,12 +473,12 @@ function renderPresetsTable(activePreset = -1) {
         const cell = document.createElement("td");
         cell.colSpan = 3;
         cell.classList.add("presets-table--advisory");
-        cell.textContent = `No presets configured. Please edit ${PRESETS_FILE} then refresh.`;
+        cell.textContent = `No presets configured.`;
         row.appendChild(cell);
         table.appendChild(row);
         container.appendChild(table);
     } else {
-        const data = showAllPresets ? CAMERA_PRESETS : CAMERA_PRESETS.slice(0, PRESETS_TABLE_MINIMUM_ROWS) 
+        const data = CAMERA_PRESETS
         data.forEach(preset => {
             const row = document.createElement("tr");
 
@@ -780,10 +777,6 @@ function highlightCameraPreset(preset_id) {
     const rows = document.querySelectorAll(`#${PRESETS_TABLE_CONTAINER_ELEMENTID} tr`);
     rows.forEach(r => r.classList.remove("presets-table--highlight"));
     resetAllSetButtons();
-    if (rowHighlightTimeoutHandle) {
-        clearTimeout(rowHighlightTimeoutHandle);
-        rowHighlightTimeoutHandle = null;
-    }
 
     if (preset_id < 0) {
         return;

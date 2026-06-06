@@ -1,27 +1,19 @@
 .call-btn {
-    background-color: var(--green5);
-    transition: all 0.2s ease;
-}
-
-.call-btn:hover {
-    background-color: var(--green4);
+    --button-bg: var(--green5);
+    --button-bg-hover: var(--green4);
+    --button-bg-hold: var(--green6);
 }
 
 .set-btn {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transition: all 0.2s ease;
+    --button-bg: var(--green6);
+    --button-bg-hover: var(--green5);
+    --button-bg-hold: var(--green4);    
 }
 
 .set-btn.armed {
-    opacity: 1;
-    cursor: pointer;
-    background-color: var(--green2);
-    color: #000;
-}
-
-.set-btn.armed:hover {
-    background-color: var(--green3);
+    --button-bg: var(--green2);
+    --button-bg-hover: var(--green1);
+    --button-text: black;
 }
 
 .presets-table {

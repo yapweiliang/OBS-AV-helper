@@ -85,7 +85,7 @@ module.exports = {
         ],
 
         DISABLE_SET_BUTTONS_AFTER_S: 30,    // how many seconds delay before disabling the SET button
-        PRESETS_TABLE_MINIMUM_ROWS: 2,              // suggest 2 rows.  e.g. show top 2 presets always
+        //PRESETS_TABLE_MINIMUM_ROWS: 2,              // suggest 2 rows.  e.g. show top 2 presets always
 
         obsScenes: [
             { id: "btnOBSBand",     sceneName: "Ban",       label: "Band - Right" },
