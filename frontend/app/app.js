@@ -78,12 +78,13 @@ const FOCUS_ZONES = [
     { id: 6, label: 'point (do not use)' }
 ];
 
-const eid_selFocusZoneSelect  = document.getElementById('selFocusZoneSelect');
-const eid_btnToggleAutoFocus  = document.getElementById('btnToggleAutoFocus');
-const eid_btnOnePushFocus     = document.getElementById('btnOnePushFocus');
-const eid_infoBtn             = document.getElementById('infoButton');
-const eid_helpBtn             = document.getElementById('helpButton');
-const eid_codeBtn             = document.getElementById('codeButton');
+const eid_selFocusZoneSelect = document.getElementById('selFocusZoneSelect');
+const eid_btnToggleAutoFocus = document.getElementById('btnToggleAutoFocus');
+const eid_btnOnePushFocus    = document.getElementById('btnOnePushFocus');
+const eid_infoBtn            = document.getElementById('infoButton');
+const eid_helpBtn            = document.getElementById('helpButton');
+const eid_codeBtn            = document.getElementById('codeButton');
+const eid_fullBtn            = document.getElementById('fullScreenButton');
 
 const X32_TAG = "__X32__";
 
@@ -867,18 +868,21 @@ function initHoldButton(button) {
 
     const progressBar = document.createElement("div");
     progressBar.className = "progress-bar";
-    button.prepend(progressBar);
+    button.prepend(progressBar); // no obvious difference between prepend and append
 
     const progress = button.querySelector(".progress-bar");
     const holdMs = button.dataset.holdMs !== undefined ? Number(button.dataset.holdMs) : 0;
     const actionName = (button.dataset.action != undefined) ? button.dataset.action : "";
     const title = (button.title != undefined) ? button.title : "";
+    const bypassHold = (button.dataset.bypassHold != undefined) || (holdMs <= 0);
 
     let raf = null;
     let timer = null;
     let startTime = 0;
+    let armed = false;
 
     function reset() {
+        armed = false;
         clearTimeout(timer);
         cancelAnimationFrame(raf);
         progress.style.width = "0%";
@@ -893,27 +897,34 @@ function initHoldButton(button) {
         }
     }
 
+    function onPointerUp() {
+        if (armed) { runHoldAction(actionName, button); }
+        reset();
+    }
+
     function startHold(e) {
         if (button.disabled) {return };
         if (e.pointerType === "mouse" && e.button !== 0) { return; }; // if mouse, only accept left click
 
-        const bypassHold = (button.dataset.bypassHold != undefined)
-        if (holdMs <= 0 || bypassHold) {
-            runHoldAction(actionName, button);
+        if (bypassHold) {
+            armed = true;
             return;
         }
+
         // show the title only if holdMs > 0
-        if (title != "") { flashStatusText(`${title}`, (holdMs < 2000) ? 2000 : holdMs) };
+        if (title != "") { flashStatusText(`PRESS and HOLD... then RELEASE<br><i>${title}</i>`, (holdMs < 2000) ? 2000 : holdMs) };
+
         startTime = performance.now();
         raf = requestAnimationFrame(update);
         timer = setTimeout(() => {
-            reset();
-            runHoldAction(actionName, button);
+            armed = true;
         }, holdMs);
     }
 
+    if (bypassHold) { button.classList.add("hold-bypassed-button") }
     button.addEventListener("pointerdown", startHold);
-    ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => {
+    button.addEventListener("pointerup", onPointerUp);
+    ["pointerleave", "pointercancel"].forEach(eventName => {
         button.addEventListener(eventName, reset);
     });
 }

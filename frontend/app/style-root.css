@@ -55,8 +55,10 @@
     /* my theme */
     --color-primary: var(--blue3);
     --color-primary-hover: var(--blue2);
+    --color-primary-hold: var(--blue4);
     --color-warning: var(--yellow3);
     --color-warning-hover: var(--yellow2);
+    --color-warning-hold: var(--yellow4);
     --color-danger: var(--red3);
     --color-danger-hover: var(--red2);
     --color-dim: var(--green3);

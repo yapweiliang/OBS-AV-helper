@@ -26,6 +26,7 @@
 button {
     --button-bg: var(--color-primary);
     --button-bg-hover: var(--color-primary-hover);
+    --button-bg-hold: var(--color-primary-hold);
     --button-bg-disabled:var(--button-bg);
     --button-text: var(--text);
 
@@ -46,9 +47,16 @@ button {
     /* touchscreen stuff moved to body */
 }
 
+/* this is annoying for touch screens therefore removed, use button:active if needed
 button:hover { 
     background-color: var(--button-bg-hover); 
 }
+*/
+
+/*
+button:active { 
+}
+*/
 
 button:disabled {
     opacity: 0.5;
@@ -60,6 +68,20 @@ button:disabled {
     overflow: hidden;
 }
 
+.hold-button:active {
+    background-color: var(--button-bg-hold);
+}
+
+.hold-bypassed-button:active {
+    background-color: var(--button-bg-hover);
+}
+
+/* in case we need to override button:active
+.hold-button:active { 
+    background-color: var(--button-bg);
+}
+*/
+
 .button--big {
     padding-top: calc( var(--padding) * 3);
     padding-bottom: calc( var(--padding) * 3);
@@ -68,12 +90,15 @@ button:disabled {
 .button--prompt {
     --button-bg: var(--color-warning);
     --button-bg-hover: var(--color-warning-hover);
+    --button-bg-hold: var(--color-warning-hold);
 }
 
+/*
 .button--danger {
     --button-bg: var(--color-danger);
     --button-bg-hover: var(--color-danger-hover);
 }
+*/
 
 .button--highlighted {
     --button-bg: var(--green3);
@@ -150,9 +175,12 @@ button:disabled {
     bottom: 0;
 
     width: 0%;
+    height: calc(var(--padding) * 0.67);
 /*  height: 100%; */
 
-    background: rgba(255, 255, 255, 0.2);
+    /*background: rgba(255, 255, 255, 0.2);*/
+    background: var(--color-danger);
+    
     pointer-events: none;
 }
 
