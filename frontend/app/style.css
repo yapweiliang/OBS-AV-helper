@@ -48,15 +48,10 @@ button {
     /* touchscreen stuff moved to body */
 }
 
-/* this is annoying for touch screens therefore removed, use button:active if needed
-button:hover { 
-    background-color: var(--button-bg-hover); 
-}
-*/
-
+/* hover is annoying for touch screens therefore removed, use button:active if needed */
 /*
-button:active { 
-}
+button:hover { background-color: var(--button-bg-hover); }
+button:active { }
 */
 
 button:disabled {
@@ -121,13 +116,6 @@ button:disabled {
     --button-bg: var(--green3);
     --button-bg-hover: var(--green4);
 }
-/*
-
-.button--hidden {
-    display: none;
-}
-
-    */
 
 .button--inline {
     width: max-content;
@@ -165,11 +153,6 @@ button:disabled {
     opacity: 0.65;
     border-color: orange;
 }
-/*
-.overlay-buttons {
-    width: 100%;
-}
-    */
 
 .progress-bar {
     position: absolute;
