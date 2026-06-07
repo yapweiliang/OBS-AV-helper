@@ -54,6 +54,7 @@ const GREEN_DOT = '🟢';
 const AMBER_DOT = '🟡';
 const RED_DOT   = '🔴';
 const WHITE_DOT = '⚪';
+const GAP_BETWEEN_BUTTONS = '&nbsp';
 
 const OTHER_OBS_ACTION_BUTTONS = [
     'btnOverlayParents', 'btnOverlayCustom',
@@ -415,23 +416,27 @@ function renderX32Buttons() {
     container.innerHTML = "";
 
     for (const btn of CONFIG.ui.buttons) {
+        if (btn.id == "") {
+            const sp = document.createElement("span");
+            sp.innerHTML = GAP_BETWEEN_BUTTONS;
+            
+            container.appendChild(sp);
+        } else {
+            const el = document.createElement("button");
+            el.id = btn.id;
+            el.textContent = btn.label;
+            el.classList.add('hold-button');
+            el.dataset.action = X32_TAG + btn.signalId;
 
-        const el = document.createElement("button");
+            if (btn.confirm == true) {
+                el.classList.add('hold-button', 'button--prompt');
+                el.dataset.holdMs = 1000;
+                el.title = btn.helpText || "no help text defined";
+            }
+            // else { el.dataset.holdMs = 0; } // not needed as default = 0
 
-        el.id = btn.id;
-        el.textContent = btn.label;
-
-        el.classList.add('hold-button');
-        el.dataset.action = X32_TAG + btn.signalId;
-
-        if (btn.confirm == true) {
-            el.classList.add('hold-button', 'button--prompt');
-            el.dataset.holdMs = 1000;
-            el.title = btn.helpText || "no help text defined";
+            container.appendChild(el);
         }
-        // else { el.dataset.holdMs = 0; } // not needed as default = 0
-
-        container.appendChild(el);
     }
 }
 
@@ -547,17 +552,22 @@ function renderOBSButtons() {
     container.innerHTML = "";
 
     for (const btn of CONFIG.ui.obsScenes) {
+        if (btn.id == "") {
+            const sp = document.createElement("span");
+            sp.innerHTML = GAP_BETWEEN_BUTTONS;
 
-        const el = document.createElement("button");
+            container.appendChild(sp);
+        } else {
+            const el = document.createElement("button");
+            el.id = btn.id;
+            el.textContent = btn.label;
+            el.classList.add('hold-button');
+            el.dataset.action = OBS_TAG + btn.sceneName;
+            // el.dataset.holdMs = 0; // not needed as default = 0
 
-        el.id = btn.id;
-        el.textContent = btn.label;
+            container.appendChild(el);
+        }
 
-        el.classList.add('hold-button');
-        el.dataset.action = OBS_TAG + btn.sceneName;
-        // el.dataset.holdMs = 0; // not needed as default = 0
-
-        container.appendChild(el);
     }
 }
 
@@ -644,7 +654,9 @@ async function showDailyCode() {
 function enableOBSActionButtons(enabled = true) {
     for (const btn of CONFIG.ui.obsScenes) {
         const el = document.getElementById(btn.id);
-        el.disabled = !enabled;        
+        if (btn.id != '') {
+            el.disabled = !enabled;
+        }
     }
 
     for (const btn of OTHER_OBS_ACTION_BUTTONS) {
@@ -658,10 +670,12 @@ function enableOBSActionButtons(enabled = true) {
 
 function enableActionButtons(enabled = true) {
 
-    // maybe retain these, as they send a POST
+    // X32 buttons
     for (const btn of CONFIG.ui.buttons) {
         const el = document.getElementById(btn.id);
-        el.disabled = !enabled;
+        if (btn.id != '') {
+            el.disabled = !enabled;
+        }
     }
 
     // OBS scene buttons

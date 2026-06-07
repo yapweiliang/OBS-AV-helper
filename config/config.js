@@ -54,13 +54,13 @@ module.exports = {
         buttons: [
             { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
             { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" },
-
+            { id: "" },
             { id: "btnLecternOn",       signalId: "lecternOn",      label: "Lectern On" },
             { id: "btnLecternLouder",   signalId: "lecternLouder",  label: "Lectern Louder" },
             { id: "btnBandSinging",     signalId: "bandSinging",    label: "Band Singing" },
             { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
             { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
-
+            { id: "" },
             { id: "btnInitialise",      signalId: "initialise",     label: "Initialise...",
                 confirm: true, helpText: "This will do basic settings for speech" }
         ],
@@ -89,11 +89,21 @@ module.exports = {
         //PRESETS_TABLE_MINIMUM_ROWS: 2,              // suggest 2 rows.  e.g. show top 2 presets always
 
         obsScenes: [
-            { id: "btnOBSBand",     sceneName: "Ban",       label: "Band - Right" },
-            { id: "btnOBSBand2",    sceneName: "Scene 2",      label: "Scene 2" },
-            { id: "btnOBSBand3",    sceneName: "Scene 3",      label: "Scene 3" },
-            { id: "btnOBSLectern",  sceneName: "Lectern",   label: "abcdef" },
-            { id: "btnReading",     sceneName: "Reading",   label: "Reading" }
+            { id: "btnOBS_01", sceneName: "2 BAND: lead",             label: "BAND: lead" },
+            { id: "btnOBS_02", sceneName: "3 BAND: right + words",    label: "BAND: right + words" },
+            { id: "btnOBS_03", sceneName: "1 BAND: full + words",     label: "BAND: full + words" },
+            { id: "btnOBS_04", sceneName: "4 STAGE",                  label: "STAGE (to rename)" },
+            { id: "" },
+            { id: "btnOBS_05", sceneName: "5 LECTERN",                label: "LECTERN" },
+            { id: "btnOBS_06", sceneName: "6 Lectern as inset",       label: "Lectern as inset" },          
+            { id: "btnOBS_07", sceneName: "7 Reading",                label: "Lectern Reading" },
+            { id: "btnOBS_08", sceneName: "8 Fullscreen Laptop",      label: "Fullscreen Laptop" },
+            { id: "" },
+            { id: "btnOBS_09", sceneName: "Celebrations",             label: "Celebrations" },
+            { id: "btnOBS_10", sceneName: "EMERGENCY",                label: "EMERGENCY" },
+            { id: "btnOBS_11", sceneName: "Video Being Shown",        label: "Video Being Shown" },
+            { id: "btnOBS_12", sceneName: "Pre-Service",              label: "Pre-Service" },
+            { id: "" }
         ]
     }
 };

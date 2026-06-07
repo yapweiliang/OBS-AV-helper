@@ -81,13 +81,6 @@
                 <td>
                     <div id="obsSceneButtonsContainer"></div>
                     <div>
-                        <button id="btnStartStopStream"
-                            title="Start or Stop OBS live stream"
-                            class="hold-button button--prompt"
-                            data-hold-ms="2000"
-                            data-action="toggleStreamStartStop">
-                            <span class="label">Start/Stop stream...</span>
-                        </button>
                         <button id="btnOverlayParents"
                             title="Show overlay asking parents to collect children prompty AFTER service"
                             class="hold-button"
@@ -102,16 +95,14 @@
                             data-action="toggleCustomOverlay">
                             <span class="label">Custom message</Span>
                         </button>
-                        <!--
-                        <button id="btnConfigureOverlays"
-                            title="This will show OVERLAY scene on OBS for configuration"
-                            class="hold-button button--inline button--disabled"
-                            data-hold-ms="0"
-                            data-action="configureOverlays"
-                            disabled>
-                            🔧 overlays...
-                        </button>
-                        -->
+                        &nbsp; <!--SPACER-->
+                        <button id="btnStartStopStream"
+                            title="Start or Stop OBS live stream"
+                            class="hold-button button--prompt"
+                            data-hold-ms="2000"
+                            data-action="toggleStreamStartStop">
+                            <span class="label">Start/Stop stream...</span>
+                        </button>                        
                     </div>
                     <div>OBS scene: <span id="obsCurrentScene"></span></div>
                 </td>
@@ -167,6 +158,7 @@
                         <!--------------------------------->
                         <div id="presetTableInlineContainer"></div>
                         <!--------------------------------->
+                        &nbsp; <!--SPACER-->
                         <button id="btnResetCamera" 
                             title="This will re-set the camera settings"
                             class="hold-button button--prompt"
