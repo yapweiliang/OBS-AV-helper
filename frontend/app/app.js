@@ -740,8 +740,8 @@ function updateX32Faders() {
         if (!el) continue;
 
         let value;
-        const f = X32_STATE[fdr.signalId] || -1;
-        if (f<0) {
+        const f = X32_STATE[fdr.signalId]
+        if (f == null) {
             el.querySelector(".label").textContent = '?';
             return;
         }
@@ -750,6 +750,7 @@ function updateX32Faders() {
         else if (f >= 0.0625) { value = (f * 160) - 70 }
         else if (f >= 0) { value = (f * 480) - 90 }
         value = (f === 0) ? '-∞' : `${(value>0)?'+':''}${value.toFixed(1)}`;
+        el.querySelector(".label").textContent = `${value} dB`;
     }
 }
 
