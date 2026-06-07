@@ -335,7 +335,7 @@ async function wsMessageHandler(data, ws) {
         case "getCameraSettings":
             e = await camera.getCameraSettings();
             // reply only to the calling client
-            ws.send(JSON.stringify({ type: "displayCameraSettings", text: e }))
+            ws.send(JSON.stringify({ type: "displayCameraSettings", text: JSON.stringify(e) }))
             break;
 
         // messages from app.js for obs.js
