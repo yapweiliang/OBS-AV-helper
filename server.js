@@ -272,10 +272,12 @@ async function wsMessageHandler(data, ws) {
         // ----------------------------------
         case "callCameraPreset":
             e = await camera.callPreset(msg.preset_id);
+            highlightCameraPreset(camera.lastSelectedPreset); // development environment in camera.js will ignore failure
             // TODO statusText update
             break;
         case "setCameraPreset":
             e = await camera.setPreset(msg.preset_id, msg.preset_name);
+            highlightCameraPreset(camera.lastSelectedPreset); // development environment in camera.js will ignore failure
             // TODO statusText update
             break;
         case "toggleAutoFocus":
@@ -314,12 +316,14 @@ async function wsMessageHandler(data, ws) {
             break;
         case "resetCamera":
             // TODO can we disable camera buttons temporarily?
+            highlightCameraPreset(-1);
             e = await camera.reloadCameraSettings();
             // TODO statusText update
             await refreshCameraAllStates();
             break;
         case "restartCamera":
             // TODO can we disable camera buttons temporarily?
+            highlightCameraPreset(-1);
             await doRebootCamera();
             await refreshCameraAllStates();
             break;
@@ -329,9 +333,6 @@ async function wsMessageHandler(data, ws) {
             await refreshCameraAllStates();
             break;
 
-        case "enableSetCameraPreset???":
-            // TODO
-            break;
         case "getCameraSettings":
             e = await camera.getCameraSettings();
             // reply only to the calling client

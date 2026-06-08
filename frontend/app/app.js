@@ -15,8 +15,6 @@ let lastHighlightedTimeoutId = null;
 
 // PresetsTable states
 let CAMERA_PRESETS = null;
-//let activePreset = -1; // -1 means no active preset
-let setButtonTimeoutHandle = null;
 
 // camera states
 let cameraTallyLightColor = "";
@@ -279,9 +277,6 @@ function onSocketMessage(event) {
         case "highlightCameraPreset":
             highlightCameraPreset(msg.preset_id)            
             break;
-        case "enableSetCameraPreset_TODO":
-            console.log("enableSetCameraPreset TODO IS THIS NEEDED ?   PLACEHOLDER")
-            break;
         case "updateClientTallyLightIndicator":
             cameraTallyLightColor = msg.color;
             updateCameraUIStatus();
@@ -526,11 +521,12 @@ function renderPresetsTable(activePreset = -1) {
                 </td>
                 <td>
                     <button class="set-btn hold-button"
-                            data-holdMs=500
+                            title="Save current PTZ position to Preset ${preset.PresetNumber}"
+                            data-hold-ms=500
                             data-action="setPreset"
                             data-id="${preset.PresetNumber}"
                             >
-                        Set ${preset.PresetNumber} TODO...
+                        Set ${preset.PresetNumber}...
                     </button>
                 </td>`;
 
@@ -692,6 +688,12 @@ function enableActionButtons(enabled = true) {
     enableOBSActionButtons(obsConnectSuccess && enabled);
 
     // Camera preset and actions buttons
+    document.querySelectorAll(".set-btn").forEach(btn => {
+        btn.disabled = !enabled;
+    })
+    document.querySelectorAll(".call-btn").forEach(btn => {
+        btn.disabled = !enabled;
+    })
 
     // other Camera buttons
     for (const btn of OTHER_CAMERA_ACTION_BUTTONS) {
@@ -768,57 +770,21 @@ function updateX32Faders() {
 // UPDATE CAMERA UI stuff
 // ----------------------------------------------------
 
-function resetAllSetButtons() {
-    document.querySelectorAll(".set-btn").forEach(btn => {
-        btn.disabled = true;
-        btn.classList.remove("armed");
-    });
-
-    if (setButtonTimeoutHandle) {
-        clearTimeout(setButtonTimeoutHandle);
-        setButtonTimeoutHandle = null;
-    }
-}
-
-function startTimeout() {
-    if (setButtonTimeoutHandle) clearTimeout(setButtonTimeoutHandle);
-
-    setButtonTimeoutHandle = setTimeout(() => {
-        resetAllSetButtons();
-    }, PRESETS_TABLE_TIMEOUT_MS);
-}
-
-function enableSetCameraPreset(preset_id) {
-    resetAllSetButtons();
-
-    const btn = document.querySelector(`.set-btn[data-id="${preset_id}"]`);
-    if (btn) {
-        btn.disabled = false;
-        btn.classList.add("armed");
-        startTimeout();
-    }
-}
-
 function highlightCameraPreset(preset_id) {
+    // preset_id < 0 means remove highlight
     // called when:
     // - server.js sends message on websocket connection [with preset_id]
-    //   - when presetsTableActions() process a call-button event/action
+    //   - when call or set preset is pressed
     //   - when obs.js sends message on scene change
     // - renderPresetsTable() for drawing/redrawing
     //   - when app.js initialise() --> renderUI() --> renderPresetsTable()
     //          TODO this currently does not obtain/know/send the active preset
-    //   - when [btnTogglePresets] --> presetsTableActions() --> renderPresetsTable()
-    //          TODO this currently does not know/send the activePreset
 
     // TODO how to ensure renderPresetsTable gets the correct activePreset?
     // TODO this logic should be managed from server.js
 
-    // n < 0 means no activePreset
-    // activePreset = preset_id;  // TODO this should live in server.js
-
     const rows = document.querySelectorAll(`#${PRESETS_TABLE_CONTAINER_ELEMENTID} tr`);
     rows.forEach(r => r.classList.remove("presets-table--highlight"));
-    resetAllSetButtons();
 
     if (preset_id < 0) {
         return;
@@ -835,8 +801,6 @@ function highlightCameraPreset(preset_id) {
     if (!target) return;
 
     target.classList.add("presets-table--highlight");
-    enableSetCameraPreset(preset_id);
-
 }
 
 function updateCameraUIStatus() {
@@ -1007,9 +971,7 @@ async function runHoldAction(actionName, button) {
     } else if (actionName == "callPreset") {
         // handle call camera preset
         const id = Number(button.dataset.id);
-        socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id })); // App.Camera.callPreset(id);
-//        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id })); // enableSetButton(id); TODO is this needed
-        socket.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: id })); // //highlightCameraPreset(id);  also sets activePreset   
+        socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id }));
     } else if (actionName == "setPreset") {
         // handle set camera preset
         const id = Number(button.dataset.id);

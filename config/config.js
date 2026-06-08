@@ -18,6 +18,7 @@ module.exports = {
     },
 
     camera: {
+        isDevelopment: isDev,
         // `http://${config.CAMERA_IP}`
         CAMERA_IP: isDev ? "ubuntu-server.rarebits:5000" : "192.168.32.107"  
     },

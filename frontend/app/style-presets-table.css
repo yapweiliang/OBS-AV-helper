@@ -5,15 +5,9 @@
 }
 
 .set-btn {
-    --button-bg: var(--green6);
-    --button-bg-hover: var(--green5);
-    --button-bg-hold: var(--green4);    
-}
-
-.set-btn.armed {
-    --button-bg: var(--green2);
-    --button-bg-hover: var(--green1);
-    --button-text: black;
+    --button-bg: var(--color-warning);
+    --button-bg-hover: var(--color-warning-hover);
+    --button-bg-hold: var(--color-warning-hold);    
 }
 
 .presets-table {
@@ -28,15 +22,15 @@
 
 .presets-table th {
     font-style: italic;
-    padding-left: 12px;
-    padding-right: 0px;
+    padding-left: 8px;
+    padding-right: 4px;
     padding-top: 6px;
     padding-bottom: 6px;
 }
 
 .presets-table td {
-    padding-left: 12px;
-    padding-right: 0px;
+    padding-left: 8px;
+    padding-right: 4px;
 }
 
 .presets-table--advisory {
@@ -46,7 +40,7 @@
 }
 
 .presets-table--highlight {
-    background-color: var(--yellow1);
+    background-color: var(--green2);
     color: black;
     transition: background-color 0.3s ease;
 }
