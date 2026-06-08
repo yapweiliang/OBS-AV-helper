@@ -389,11 +389,8 @@ x32.on("stateChanged", state => {
     broadcastToBrowsers({ type: "x32StateChanged", state });
 });
 
-x32.on("loadSuccess", state => {
-    // x32 emulator errorneously returns libchan when it should return snippet
-    if (state.success && state.type == ((CONFIG.x32.isDevelopment) ? "libchan" : "snippet")) {
-        broadcastToBrowsers({ type: "x32LoadSuccess", state });
-    }
+x32.on("snippetLoadSuccess", state => {
+    broadcastToBrowsers({ type: "x32SnippetLoadSuccess", state });
 });
 
 x32.on("heartbeatsMissed", state => {

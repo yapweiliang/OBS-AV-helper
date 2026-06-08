@@ -42,8 +42,9 @@ module.exports = {
 
             muteSpeech:     { type: "toggle",   address: "/dca/5/on",       invert: true },
             muteBand:       { type: "toggle",   address: "/config/mute/6",  invert: false },
+            muteAll:        { type: "toggle",   address: "/config/mute/1",  invert: false },
 
-            testVolume:     { type: "fader",    address: "/ch/01/mix/fader" }
+            mainVolume:     { type: "fader",    address: "/main/st/mix/fader" }
         }
     },
 
@@ -54,6 +55,7 @@ module.exports = {
         buttons: [
             { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
             { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" },
+            { id: "btnMuteAll",         signalId: "muteAll",        label: "Mute All Mics" },
             { id: "" },
             { id: "btnLecternOn",       signalId: "lecternOn",      label: "Lectern On" },
             { id: "btnLecternLouder",   signalId: "lecternLouder",  label: "Lectern Louder" },
@@ -67,13 +69,16 @@ module.exports = {
 
         // not actions
         indicators: [
+            { id: "" },
             { id: "indSpeechMuted", signalId: "muteSpeech",     label: "Speech Muted" },
-            { id: "indBandMuted",   signalId: "muteBand",       label: "Band Muted" }
+            { id: "indBandMuted",   signalId: "muteBand",       label: "Band Muted" },
+            { id: "indAllMuted",    signalId: "muteAll",        label: "All Mics Muted" },
+            { id: "" }
         ],
 
         // not actions (not intended)
         faders: [
-            { id: "fdrTest",        signalId: "testVolume",     label: "ch 1 test"}
+            { id: "fdrMain",        signalId: "mainVolume",     label: "Main should be 0 dB →"}
         ],
 
         cameraPresets: [

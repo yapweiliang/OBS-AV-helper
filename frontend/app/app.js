@@ -241,15 +241,19 @@ function onSocketMessage(event) {
                 lastSelectedX32SnippetButton = null; // wait a short while to allow x32LoadSuccess
             }, SNIPPET_BUTTON_DIM_DURATION_MS)
             break;
-        case "x32LoadSuccess":
-            // assume this is a load success for snippet (checked at server.js)
+        case "x32SnippetLoadSuccess":
+            // load success for snippet (determined by x32.js)
+            // triggered following a succesful snippet load (by any device, including Mixing Station, the 'blackbox', etc)
+            // expect msg.state in ('libchan', 'snippet', 'gosnippet') although probably not needed
+
+            if (lastHighlightedX32SnippetButton) {
+                // cancel last one if still highlighted
+                lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
+                lastHighlightedX32SnippetButton = null;
+            }
 
             if (lastSelectedX32SnippetButton) {
-
-                if (lastHighlightedX32SnippetButton) {
-                    // cancel last one if still highlighted
-                    lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
-                }
+                // button was pressed a moment ago, therefore convert 'dim' to 'highlight';
                 lastHighlightedX32SnippetButton = lastSelectedX32SnippetButton;
                 lastHighlightedX32SnippetButton.classList.remove("button--dimmed"); // not sure why highlighted not shown until dimmed removed
                 lastHighlightedX32SnippetButton.classList.add("button--highlighted");
@@ -263,12 +267,7 @@ function onSocketMessage(event) {
                
             } else {
                 // in this situation a different device has selected a snippet
-                // therefore we need to clear our previous highlight
-                if (lastHighlightedX32SnippetButton) {
-                    // cancel last one if still highlighted
-                    lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
-                    lastHighlightedX32SnippetButton = null;
-                }
+                // - nothing to do, as highlight already cancelled
             }
             break;
         case "x32HeartbeatsMissed":
@@ -280,8 +279,8 @@ function onSocketMessage(event) {
         case "highlightCameraPreset":
             highlightCameraPreset(msg.preset_id)            
             break;
-        case "enableSetCameraPreset":
-            console.log("enableSetCameraPreset PLACEHOLDER")
+        case "enableSetCameraPreset_TODO":
+            console.log("enableSetCameraPreset TODO IS THIS NEEDED ?   PLACEHOLDER")
             break;
         case "updateClientTallyLightIndicator":
             cameraTallyLightColor = msg.color;
@@ -445,14 +444,19 @@ function renderX32Indicators() {
     const container = document.getElementById("x32Indicators"); // same grid for now
 
     for (const ind of CONFIG.ui.indicators) {
+        if (ind.id == "") {
+            const sp = document.createElement("span");
+            sp.innerHTML = GAP_BETWEEN_BUTTONS;
 
-        const el = document.createElement("div");
+            container.appendChild(sp);
+        } else {
+            const el = document.createElement("div");
+            el.id = ind.id;
+            el.className = "indicator";
+            el.innerHTML = `${ind.label}: <span class="label">value</span>`;
 
-        el.id = ind.id;
-        el.className = "indicator";
-        el.innerHTML = `${ind.label}: <span class="label">value</span>`;
-
-        container.appendChild(el);
+            container.appendChild(el);
+        }
     }
 }
 
@@ -461,14 +465,19 @@ function renderX32Faders() {
     const container = document.getElementById("x32Indicators");
 
     for (const fdr of CONFIG.ui.faders) {
+        if (fdr.id == "") {
+            const sp = document.createElement("span");
+            sp.innerHTML = GAP_BETWEEN_BUTTONS;
 
-        const el = document.createElement("div");
+            container.appendChild(sp);
+        } else {
+            const el = document.createElement("div");
+            el.id = fdr.id;
+            el.className = "fader";
+            el.innerHTML = ` ${fdr.label}: <span class="label">value</span> `;
 
-        el.id = fdr.id;
-        el.className = "fader";
-        el.innerHTML = ` ${fdr.label}: <span class="label">value</span> `;
-
-        container.appendChild(el);
+            container.appendChild(el);
+        }
     }
 }
 
@@ -517,10 +526,11 @@ function renderPresetsTable(activePreset = -1) {
                 </td>
                 <td>
                     <button class="set-btn hold-button"
+                            data-holdMs=500
                             data-action="setPreset"
                             data-id="${preset.PresetNumber}"
-                            disabled>
-                        Set ${preset.PresetNumber}
+                            >
+                        Set ${preset.PresetNumber} TODO...
                     </button>
                 </td>`;
 
@@ -998,7 +1008,7 @@ async function runHoldAction(actionName, button) {
         // handle call camera preset
         const id = Number(button.dataset.id);
         socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id })); // App.Camera.callPreset(id);
-        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id })); // enableSetButton(id); TODO is this needed
+//        socket.send(JSON.stringify({ type: "enableSetCameraPreset", preset_id: id })); // enableSetButton(id); TODO is this needed
         socket.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: id })); // //highlightCameraPreset(id);  also sets activePreset   
     } else if (actionName == "setPreset") {
         // handle set camera preset
