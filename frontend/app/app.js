@@ -419,7 +419,7 @@ function renderX32Buttons() {
             const el = document.createElement("button");
             el.id = btn.id;
             el.textContent = btn.label;
-            el.classList.add('hold-button');
+            el.classList.add('button--big', 'hold-button');
             el.dataset.action = X32_TAG + btn.signalId;
 
             if (btn.confirm == true) {
@@ -850,9 +850,11 @@ function highlightOBSScene(sceneName) {
 
     for (const btn of CONFIG.ui.obsScenes) {
         const el = document.getElementById(btn.id);
-        el.classList.remove('button--highlighted');
-        if (btn.sceneName == sceneName) {
-            el.classList.add('button--highlighted');
+        if (btn.id != "") {
+            el.classList.remove('button--highlighted');
+            if (btn.sceneName == sceneName) {
+                el.classList.add('button--highlighted');
+            }
         }
     }
     eid_obsCurrentScene.innerHTML = sceneName;

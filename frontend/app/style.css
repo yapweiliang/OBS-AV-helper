@@ -80,8 +80,8 @@ button:disabled {
 */
 
 .button--big {
-    padding-top: calc( var(--padding) * 3);
-    padding-bottom: calc( var(--padding) * 3);
+    padding-top: calc( var(--padding) * 2);
+    padding-bottom: calc( var(--padding) * 2);
 }
 
 .button--prompt {
@@ -166,10 +166,7 @@ button:disabled {
 
     width: 0%;
     height: calc(var(--padding) * 0.67);
-/*  height: 100%; */
-
-    /*background: rgba(255, 255, 255, 0.2);*/
-    background: var(--color-danger);
+    background: red;
     
     pointer-events: none;
 }
