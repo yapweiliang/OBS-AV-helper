@@ -94,7 +94,7 @@ button:disabled {
     --button-bg: var(--color-danger);
     --button-bg-hover: var(--color-danger-hover);
     --button-bg-hold: var(--color-danger-hold);
-};
+}
 
 .button--highlighted {
     --button-bg: var(--green3);
