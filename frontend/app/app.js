@@ -727,7 +727,7 @@ function updateX32Buttons() {
         if (!el) continue;
 
         const value = X32_STATE[btn.signalId];
-        applyBooleanStyle(el, value);
+        applyMutedStyle(el, value);
     }
 }
 
@@ -864,9 +864,7 @@ function highlightOBSScene(sceneName) {
 // STYLE HELPERS
 // ----------------------------------------------------
 
-function applyBooleanStyle(el, value) {
-    // TODO rename as mute rather than on/off
-
+function applyMutedStyle(el, value) {
     if (value === true) {
         el.classList.add("button--muted");
         el.classList.remove("button--unmuted");

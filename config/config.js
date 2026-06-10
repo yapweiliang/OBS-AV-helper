@@ -28,7 +28,7 @@ config.camera = {   // this is passed to the camera.js module on initialisation
 config.x32 = {  // this is passed to the x32.js module on initialisation
 
     isDevelopment: isDev,
-        isDevelopment: isDev,
+    useGoSnippetMethod: false,      // OSC "/load snippet" vs "/-action/gosnippet"
 
     host: isDev ? "192.168.56.1" : "192.168.32.11",
     port: 10023,
