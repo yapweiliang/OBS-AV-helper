@@ -60,6 +60,7 @@
     --color-warning-hover: var(--yellow2);
     --color-warning-hold: var(--yellow4);
     --color-danger: var(--red3);
+    --color-danger-hold: var(--red4);
     --color-danger-hover: var(--red2);
     --color-dim: var(--green3);
     --color-dim-hover: var(--green4);

@@ -37,7 +37,6 @@ const OBS_SCENE_BUTTONS_CONTAINER = "obsSceneButtonsContainer";
 const eid_obsCurrentScene = document.getElementById("obsCurrentScene");
 
 const PRESETS_TABLE_CONTAINER_ELEMENTID = "presetTableInlineContainer";
-let PRESETS_TABLE_TIMEOUT_MS;
 
 const defaultFlashTimeoutDurationMs = 5000;
 let flashStatusTextTimeoutID = null;
@@ -119,7 +118,6 @@ async function initialise() {
 
     CONFIG = await loadConfig();
     CAMERA_PRESETS = CONFIG.ui.cameraPresets || null;
-    PRESETS_TABLE_TIMEOUT_MS = (CONFIG.ui.DISABLE_SET_BUTTONS_AFTER_S || 30) * 1000;
 
     function makeHoldButton(button, action) {
         button.classList.add('hold-button');
@@ -309,6 +307,18 @@ console.log("updateClientFocusState received focus_mode", msg.focus_mode);
             break;
         case "highlightOBSScene":
             highlightOBSScene(msg.sceneName);
+            break;
+        case "updateOverlayButtonText":
+            document.getElementById(msg.btnId).querySelector(".label").textContent = msg.text;
+            break;
+        case "updateOverlayButtonClass":
+            if (msg.state) {
+                document.getElementById(msg.btnId).classList.add('button--highlighted');
+                document.getElementById(msg.btnId).dataset.bypassHold = 'something';
+            } else {
+                document.getElementById(msg.btnId).classList.remove('button--highlighted');
+                document.getElementById(msg.btnId).removeAttribute('data-bypass-hold');
+            }
             break;
 
         // ui/status messages
@@ -829,6 +839,7 @@ function updateCameraUIStatus() {
     }
 
     // TODO do we update the presetsTable here too?
+    // TODO can this logic move to server.js and camera.js?
 }
 
 // ----------------------------------------------------
@@ -921,7 +932,7 @@ function initHoldButton(button) {
         if (button.disabled) {return };
         if (e.pointerType === "mouse" && e.button !== 0) { return; }; // if mouse, only accept left click
 
-        if (bypassHold) {
+        if ((button.dataset.bypassHold != undefined) || (holdMs <= 0)) {
             armed = true;
             return;
         }
@@ -936,7 +947,9 @@ function initHoldButton(button) {
         }, holdMs);
     }
 
-    if (bypassHold) { button.classList.add("hold-bypassed-button") }
+    if ((button.dataset.bypassHold != undefined) || (holdMs <= 0)) { 
+        button.classList.add("hold-bypassed-button") 
+    }
     button.addEventListener("pointerdown", startHold);
     button.addEventListener("pointerup", onPointerUp);
     ["pointerleave", "pointercancel"].forEach(eventName => {

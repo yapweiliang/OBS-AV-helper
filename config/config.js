@@ -113,10 +113,10 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
         { id: "" }
     ],
 
-    overlays: [
-        { id: "btnOverlayParents",  sourceName: config.obs.PARENTS_OVERLAY_SOURCENAME,  label: "Parents collect after" },
-        { id: "btnOverlayCustom",   sourceName: config.obs.CUSTOM_OVERLAY_SOURCENAME,   label: "Custom message" }
-    ],
+    overlays: {
+        parents: { btnId: "btnOverlayParents",  sourceName: config.obs.PARENTS_OVERLAY_SOURCENAME,  label: "Parents collect after..." },
+        custom:  { btnId: "btnOverlayCustom",   sourceName: config.obs.CUSTOM_OVERLAY_SOURCENAME,   label: "Custom message..." }
+    },
 
     DEFAULT_OVERLAY_TIMEOUT_SECONDS: 300
 

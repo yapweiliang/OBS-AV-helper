@@ -17,6 +17,7 @@
     - set up X32/OBS/Camera (Emitter)    
     - X32 (Emitter)     - INCOMING
     - OBS (Emitter)     - INCOMING
+    - obs helper functions (overlay)
     - CAMERA (Emitter)  - INCOMING
     - camera helper functions
 
@@ -213,7 +214,7 @@ async function onConnection(ws, req) {
 
     // send camera state
     ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: await camera.getCameraTallyColor() }));
-    // TODO do we send active preset ?
+    // TODO do we send active preset? YES, and also other focus states
 
     // send obs state
     ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
@@ -221,6 +222,7 @@ async function onConnection(ws, req) {
     if (obs.obsConnectSuccess) {        
         ws.send(JSON.stringify({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene()  }));
     }
+    resetOverlayButtons();
 
     // declare message handler
     ws.on("message", data => wsMessageHandler(data, ws));
@@ -345,9 +347,9 @@ async function wsMessageHandler(data, ws) {
             obs.setCurrentProgramScene(msg.sceneName);
             break;            
         case "toggleParentsOverlay":
-            console.log(DEBUG_PREFIX, "PLACEHOLDER toggleParent Overlay");
-            // toggleParentsOverlay('Parents collect after');
-            // TODO update button status, if possible manage countdown here
+            if (await obs.getCurrentProgramScene() != CONFIG.obs.OVERLAY_SCENENAME) {
+                toggleParentsOverlay();
+            } 
             break;
         case "toggleCustomOverlay":
             console.log(DEBUG_PREFIX, "PLACEHOLDER toggle Custom Overlay");
@@ -412,6 +414,7 @@ obs.on("obsConnectSuccess", async state =>  {
         broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToBrowsers({ type: "highlightOBSScene", sceneName: "" });
         broadcastStatusTextToBrowsers("Disconnected from OBS", 0);
+        resetOverlayButtons();
     }
 })
 
@@ -429,12 +432,146 @@ obs.on("highlightCameraPreset", preset_id => {
 
 obs.on("highlightOBSScene", sceneName => {
     broadcastToBrowsers({ type: "highlightOBSScene", sceneName: sceneName});
+});
+
+obs.on("overlaySceneSelected", () => {
+    resetOverlayButtons();
 })
 
 function highlightCameraPreset(preset_id) {
     // called from obs.on(...), or,  websocket
     activePreset = preset_id; // TODO keep our own record
     broadcastToBrowsers({ type: "highlightCameraPreset", preset_id: preset_id});
+};
+
+// ....................................................
+// OBS helper functions
+// ....................................................
+
+const OBS_OVERLAYS = {
+    [CONFIG.obs.PARENTS_OVERLAY_SOURCENAME]: {
+        buttonId: CONFIG.ui.overlays.parents.btnId,
+        buttonBaseText: CONFIG.ui.overlays.parents.label,
+        durationMs: CONFIG.ui.DEFAULT_OVERLAY_TIMEOUT_SECONDS * 1000,
+        timer: null,
+        countdownInterval: null,
+        expiresAt: 0
+    },
+    [CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME]: {
+        buttonId: CONFIG.ui.overlays.custom.btnId,
+        buttonBaseText: CONFIG.ui.overlays.custom.label,
+        durationMs: CONFIG.ui.DEFAULT_OVERLAY_TIMEOUT_SECONDS * 1000,
+        timer: null,
+        countdownInterval: null,
+        expiresAt: 0
+    }
+}
+
+function toggleParentsOverlay() {
+    toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME);
+};
+
+function toggleCustomOverlay() {
+    // await obs.setTextSourceText(sourceName, result.text);
+    toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
+};
+
+async function toggleOverlay( sourceName, reset = false ) {
+    const overlay = OBS_OVERLAYS[sourceName];
+    const currentlyActive = overlay.expiresAt > Date.now();
+
+    async function resetOverlayButton() {
+        overlay.timer = null;
+        overlay.countdownInterval = null;
+        overlay.expiresAt = 0;
+
+        updateOverlayButtonClass(sourceName);
+        updateOverlayButtonText(sourceName);
+
+        await obs.setSourceVisible(sourceName, false);  // Toggle OFF
+    }
+
+    if (currentlyActive || reset) {
+        clearTimeout(overlay.timer);
+        clearInterval(overlay.countdownInterval);
+        resetOverlayButton();
+        return;
+    }
+
+/*
+    if (textPrompt) {
+        // TODO move text prompt to app.js
+        const currentText = await obs.getTextSourceText(CUSTOM_OVERLAY_SOURCENAME);
+
+        const result = await App.UI.modalPrompt({
+            title: 'Custom Overlay',
+            prompt: 'Display this message:',
+            defaultText: currentText,
+            timeoutSeconds: 60
+        })
+
+        if (result.cancelled) {
+            return;
+        }
+        await obs.setTextSourceText(sourceName, result.text);
+    }
+    */
+    await obs.unhideOverlaySceneSource();
+    await obs.setSourceVisible(sourceName, true);             // Toggle ON
+
+    overlay.expiresAt = Date.now() + overlay.durationMs;
+
+    updateOverlayButtonClass(sourceName);
+    updateOverlayButtonText(sourceName);
+
+    // Countdown updater
+    overlay.countdownInterval = setInterval(() => { updateOverlayButtonText(sourceName); }, 1000);
+
+    // Remove countdown when expired
+    overlay.timer = setTimeout(async () => {
+        clearInterval(overlay.countdownInterval);
+        resetOverlayButton();
+    }, overlay.durationMs);
+}
+
+function refreshOverlayButtons() {
+    updateOverlayButtonClass(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME);
+    updateOverlayButtonClass(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
+    // if expanding, then forEach sourcename in config.ui.overlays ... 
+}
+
+function resetOverlayButtons() {
+    // to be called if OBS overlay scene is selected
+    toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME, true);
+    toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME, true);
+}
+
+function updateOverlayButtonClass(sourceName) {
+    const overlay = OBS_OVERLAYS[sourceName];
+    const remainingMs = overlay.expiresAt - Date.now();
+    if (remainingMs <= 0) {
+        broadcastToBrowsers({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: false });
+    } else {
+        broadcastToBrowsers({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: true });
+    }
+}
+
+function updateOverlayButtonText(sourceName) {
+    const overlay = OBS_OVERLAYS[sourceName];
+    const remainingMs = overlay.expiresAt - Date.now();
+
+    if (remainingMs <= 0) {
+        broadcastToBrowsers({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+            text: overlay.buttonBaseText });
+        return;
+    }
+
+    const totalSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    broadcastToBrowsers({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+        text: `${overlay.buttonBaseText.split(" ")[0]}... (${timeString})` });
 }
 
 // ----------------------------------------------------
@@ -455,9 +592,9 @@ camera.on("updateClientFocusState", (mode, locked, zone) => {
     broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
 });
 
-// ----------------------------------------------------
+// ....................................................
 // camera helper functions
-// ----------------------------------------------------
+// ....................................................
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
