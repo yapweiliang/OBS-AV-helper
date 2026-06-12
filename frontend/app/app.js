@@ -325,9 +325,6 @@ console.log("updateClientFocusState received focus_mode", msg.focus_mode);
         case "flashStatusText":
             flashStatusText(msg.text, msg.durationMs);
             break;
-        case "displayCameraSettings":
-            showCameraInfoDialog((msg.text)?msg.text:"API call failed");
-            break;
 
         default:
             console.warn("Unrecognised event message.", event);
@@ -635,8 +632,15 @@ function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {
     }
 }
 
-function showCameraInfoDialog(text) {
-    myInfoDialogBox = EasyDialogBox.create("infoDialog", "dlg dlg-disable-clickout dlg-rounded", "Camera settings", text);
+async function showCameraInfoDialog() {
+
+    const res = await fetch("/camera/getSettings");
+    if (!res.ok) {
+        throw new Error("GET /camera/getSettings failed");
+    }
+    const result = await res.json();
+
+    myInfoDialogBox = EasyDialogBox.create("infoDialog", "dlg dlg-disable-clickout dlg-rounded", "Camera settings", result.text);
     myInfoDialogBox.addButton(
         "Copy to Clipboard",
         () => { navigator.clipboard.writeText(myInfoDialogBox.strMessage) },
@@ -970,8 +974,7 @@ async function runHoldAction(actionName, button) {
         'onePushFocus',
         'onePushWhiteBalance',
         'resetCamera',
-        'restartCamera',
-        'getCameraSettings'
+        'restartCamera'
     ];
 
     if (actionName.startsWith(X32_TAG)) {
@@ -1002,6 +1005,9 @@ async function runHoldAction(actionName, button) {
         switch (actionName) {
             case "setFocusZone":
                 socket.send(JSON.stringify({ type: actionName, id: Number(eid_selFocusZoneSelect.value) }));
+                break;
+            case "getCameraSettings":
+                showCameraInfoDialog();
                 break;
             case "showCode":
                 showDailyCode();

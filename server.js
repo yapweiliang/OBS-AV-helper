@@ -159,6 +159,15 @@ app.get("/api/config", requireAuth, (req, res) => {
     // { CONFIG.ui } will need some rewriting in app.js, but will be cleaner there
 });
 
+app.get("/camera/getSettings", requireAuth, async (req, res) => {
+    const e = await camera.getCameraSettings();
+    if (e) {
+        res.json({text: JSON.stringify(e)})
+    } else {
+        res.json({text: "unable to obtain settings from camera"})
+    }
+});
+
 app.post("/x32/action/:name", requireAuth, processX32Post);
 
 function processX32Post(req, res, next) {
@@ -333,12 +342,6 @@ async function wsMessageHandler(data, ws) {
             // TODO can we disable camera buttons temporarily?
             await doWakeupCamera();
             await refreshCameraAllStates();
-            break;
-
-        case "getCameraSettings":
-            e = await camera.getCameraSettings();
-            // reply only to the calling client
-            ws.send(JSON.stringify({ type: "displayCameraSettings", text: JSON.stringify(e) }))
             break;
 
         // messages from app.js for obs.js
