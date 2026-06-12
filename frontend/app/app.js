@@ -3,6 +3,7 @@ let CONFIG = null;
 let socket = null;          // node server socket
 
 let myInfoDialogBox = null; // https://keejelo.github.io/EasyDialogBox/documentation.html
+let myInputTextDialogBox = null;
 
 // X32 states
 let X32_STATE = {};
@@ -324,6 +325,9 @@ console.log("updateClientFocusState received focus_mode", msg.focus_mode);
         // ui/status messages
         case "flashStatusText":
             flashStatusText(msg.text, msg.durationMs);
+            break;
+        case "getCustomOverlayText":
+            doCustomOverlayText(msg.oldText); // this will send message to server.js if <OK>
             break;
 
         default:
@@ -648,6 +652,47 @@ async function showCameraInfoDialog() {
     );
     myInfoDialogBox.onClose = myInfoDialogBox.destroy;
     myInfoDialogBox.show()
+}
+
+function doCustomOverlayText(text) {
+
+    /*
+    // TODO CONSIDER rewrite to use POST, such that the button press calls this function directly
+    try {
+        const res = await fetch(`/obs/toggleOverlay/custom`, { method: "POST" });
+        // server.js to deactivate an activated overlay, or, return oldText
+        if (!res.ok) { }
+        const result = await.res.json();
+        if (result.proceed) {
+            text = result.oldText
+        } else {
+            break;
+        }
+    } catch (err) {
+        console.error("POST-ing OBS action failed:", err);
+    }
+    */
+
+    myInputTextDialogBox = EasyDialogBox.create("inputTextDialog", "dlg-prompt dlg-disable-clickout dlg-rounded", 
+        "Custom Overlay Text", 
+        "Please enter the text to display.<br>Examples: <i>Livestream Started, Hello</i><br><b><i>Avoid identifiable information (names, car plates, etc)</i></b>");
+
+    myInputTextDialogBox.onCreate = function() {
+        myInputTextDialogBox.$(".dlg-input-field")[0].defaultValue = text;
+    }
+
+    myInputTextDialogBox.onClose = function() {
+        if (myInputTextDialogBox.nRetCode === 3) {
+            const newText = myInputTextDialogBox.$(".dlg-input-field")[0].value; // .strInput unfortunately returns "" if default value is accepted
+            if (newText.length > 0) {
+                socket.send(JSON.stringify({ type: "doCustomOverlay", newText: newText }))
+            }
+        } else {
+            // do nothing, as the button state should be 'off'
+        }
+        myInputTextDialogBox.destroy();
+    }
+    myInputTextDialogBox.show();
 }
 
 async function showDailyCode() {
@@ -978,16 +1023,20 @@ async function runHoldAction(actionName, button) {
     ];
 
     if (actionName.startsWith(X32_TAG)) {
-        // handle X32 hold-button buttons (with confirm flag, e.g. initialise)
+        // handle X32 hold-button buttons
         const signalId = actionName.replace(X32_TAG, '');
         triggerX32Action(signalId);
+
     } else if (actionName.startsWith(OBS_TAG)) {
+        // handle OBS scene buttons
         const sceneName = actionName.replace(OBS_TAG, '');
         triggerOBSScene(sceneName);
+
     } else if (actionName == "callPreset") {
         // handle call camera preset
         const id = Number(button.dataset.id);
         socket.send(JSON.stringify({ type: "callCameraPreset", preset_id: id }));
+
     } else if (actionName == "setPreset") {
         // handle set camera preset
         const id = Number(button.dataset.id);
@@ -996,9 +1045,11 @@ async function runHoldAction(actionName, button) {
             preset_id: id,
             preset_name: CAMERA_PRESETS.find(p => p.PresetNumber === id)?.PresetName
         }));
+
     } else if (allowedMessages.includes(actionName)) {
         // then other (obs & camera) buttons
         socket.send(JSON.stringify({ type: actionName }));
+
     } else {
         // then special buttons
         // TODO move resetcamera and restart camera here, so we can disable/enable camera action buttons

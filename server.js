@@ -355,18 +355,16 @@ async function wsMessageHandler(data, ws) {
             } 
             break;
         case "toggleCustomOverlay":
-            console.log(DEBUG_PREFIX, "PLACEHOLDER toggle Custom Overlay");
-            // toggleCustomOverlay('Custom message');
-            // TODO update button status, if possible manage countdown here
+            if (await obs.getCurrentProgramScene() != CONFIG.obs.OVERLAY_SCENENAME) {
+                toggleCustomOverlay(ws);
+            }
+            break;
+        case "doCustomOverlay":
+            doCustomOverlay(msg.newText);
             break;
         case "toggleStreamStartStop":
             console.log(DEBUG_PREFIX, "PLACEHOLDER toggle stream startstop");
             // TODO update button status
-            break;
-        case "configureOverlays":
-            console.log(DEBUG_PREFIX, "PLACEHOLDER configure Overlay");
-            // TODO remove this method, but give instructions on how to do on OBS
-            // TODO instead obs.js to watch for overlay scene entry/exit and show/hide sources
             break;
         
         default:
@@ -471,13 +469,29 @@ const OBS_OVERLAYS = {
 }
 
 function toggleParentsOverlay() {
+    // called by message from app.js
     toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME);
 };
 
-function toggleCustomOverlay() {
-    // await obs.setTextSourceText(sourceName, result.text);
-    toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
+async function toggleCustomOverlay(ws) {
+    // called by message from app.js
+    const overlay = OBS_OVERLAYS[CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME];
+    const currentlyActive = overlay.expiresAt > Date.now();
+
+    if (currentlyActive) {
+        toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME, true); // this also resets the button
+    } else {
+        const oldText = await obs.getTextSourceText(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
+        ws.send(JSON.stringify({ type: "getCustomOverlayText", oldText: oldText }));
+        // listen elsewhere for response, which then calls doCustomOverlay()
+    }
 };
+
+async function doCustomOverlay(newText) {
+    // called by message from app.js when new text entered on inputtext dialog
+    await obs.setTextSourceText(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME, newText);
+    toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
+}
 
 async function toggleOverlay( sourceName, reset = false ) {
     const overlay = OBS_OVERLAYS[sourceName];
@@ -501,24 +515,6 @@ async function toggleOverlay( sourceName, reset = false ) {
         return;
     }
 
-/*
-    if (textPrompt) {
-        // TODO move text prompt to app.js
-        const currentText = await obs.getTextSourceText(CUSTOM_OVERLAY_SOURCENAME);
-
-        const result = await App.UI.modalPrompt({
-            title: 'Custom Overlay',
-            prompt: 'Display this message:',
-            defaultText: currentText,
-            timeoutSeconds: 60
-        })
-
-        if (result.cancelled) {
-            return;
-        }
-        await obs.setTextSourceText(sourceName, result.text);
-    }
-    */
     await obs.unhideOverlaySceneSource();
     await obs.setSourceVisible(sourceName, true);             // Toggle ON
 
@@ -544,7 +540,9 @@ function refreshOverlayButtons() {
 }
 
 function resetOverlayButtons() {
-    // to be called if OBS overlay scene is selected
+    // to be called if OBS overlay scene is selected, 
+    // or when obs disconnected
+    // or when app.js connects
     toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME, true);
     toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME, true);
 }
