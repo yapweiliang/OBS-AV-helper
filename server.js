@@ -223,7 +223,8 @@ async function onConnection(ws, req) {
 
     // send camera state
     ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: await camera.getCameraTallyColor() }));
-    // TODO do we send active preset? YES, and also other focus states
+    ws.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: activePreset }));
+    // TODO send also other focus states
 
     // send obs state
     ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
@@ -270,14 +271,8 @@ async function wsMessageHandler(data, ws) {
 
         // messages from app.js for other clients
         // --------------------------------------
-        case "flashStatusText":
-            broadcastToBrowsers({ type: "flashStatusText", text: msg.text, durationMs: msg.durationMs });
-            break;
+        // nothing here, unless we want client-to-client messaging?
 
-        // (highlightCameraPreset from obs.js is handled separately)
-        case "highlightCameraPreset":
-            highlightCameraPreset(msg.preset_id);
-            break;
 
         // messages from app.js for camera.js
         // ----------------------------------
@@ -440,9 +435,8 @@ obs.on("overlaySceneSelected", () => {
 })
 
 function highlightCameraPreset(preset_id) {
-    // called from obs.on(...), or,  websocket
-    activePreset = preset_id; // TODO keep our own record
-    broadcastToBrowsers({ type: "highlightCameraPreset", preset_id: preset_id});
+    activePreset = preset_id;
+    broadcastToBrowsers({ type: "highlightCameraPreset", preset_id: activePreset});
 };
 
 // ....................................................

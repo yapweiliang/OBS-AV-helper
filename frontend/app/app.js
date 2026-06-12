@@ -164,7 +164,6 @@ async function initialise() {
     connectWebSocket(); 
     // socket open calls onSocketOpen(), which
     // - enables action buttons, updatesconnectionstatus, etc
-    // TODO can this obtain the last-known activePreset?
 }
 
 async function loadConfig() {
@@ -832,15 +831,12 @@ function updateX32Faders() {
 function highlightCameraPreset(preset_id) {
     // preset_id < 0 means remove highlight
     // called when:
-    // - server.js sends message on websocket connection [with preset_id]
+    // - server.js sends message
+    //   - on websocket connection [with activePreset]
     //   - when call or set preset is pressed
     //   - when obs.js sends message on scene change
     // - renderPresetsTable() for drawing/redrawing
     //   - when app.js initialise() --> renderUI() --> renderPresetsTable()
-    //          TODO this currently does not obtain/know/send the active preset
-
-    // TODO how to ensure renderPresetsTable gets the correct activePreset?
-    // TODO this logic should be managed from server.js
 
     const rows = document.querySelectorAll(`#${PRESETS_TABLE_CONTAINER_ELEMENTID} tr`);
     rows.forEach(r => r.classList.remove("presets-table--highlight"));
