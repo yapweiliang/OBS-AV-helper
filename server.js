@@ -283,12 +283,12 @@ async function wsMessageHandler(data, ws) {
         case "callCameraPreset":
             e = await camera.callPreset(msg.preset_id);
             highlightCameraPreset(camera.lastSelectedPreset); // development environment in camera.js will ignore failure
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `Call Camera Preset ${msg.preset_id} failed`);
             break;
         case "setCameraPreset":
             e = await camera.setPreset(msg.preset_id, msg.preset_name);
             highlightCameraPreset(camera.lastSelectedPreset); // development environment in camera.js will ignore failure
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `Set Camera Preset ${msg.preset_id} failed`);
             break;
         case "toggleAutoFocus":
             e = await camera.toggleAutoFocus();
@@ -343,16 +343,23 @@ async function wsMessageHandler(data, ws) {
         // messages from app.js for obs.js
         // -------------------------------
         case "callOBSScene":
-            obs.setCurrentProgramScene(msg.sceneName);
-            break;            
+            e = await obs.setCurrentProgramScene(msg.sceneName);
+            if (e == 600) {
+                broadcastStatusTextToClient(ws, formatError600(msg.sceneName, true));
+            }
+            break;
         case "toggleParentsOverlay":
             if (await obs.getCurrentProgramScene() != CONFIG.obs.OVERLAY_SCENENAME) {
-                toggleParentsOverlay();
-            } 
+                toggleParentsOverlay(ws);
+            } else {
+                broadcastStatusTextToClient(ws, `Not allowed whilst Overlay Scene ${CONFIG.obs.OVERLAY_SCENENAME} is active`);
+            }
             break;
         case "toggleCustomOverlay":
             if (await obs.getCurrentProgramScene() != CONFIG.obs.OVERLAY_SCENENAME) {
                 toggleCustomOverlay(ws);
+            } else {
+                broadcastStatusTextToClient(ws, `Not allowed whilst Overlay Scene ${CONFIG.obs.OVERLAY_SCENENAME} is active`);
             }
             break;
         case "doCustomOverlay":
@@ -406,7 +413,9 @@ obs.on("obsConnectSuccess", async state =>  {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera();
-        // TODO validate scenes/sources - check that these actually exist and enable/disable?
+        // TODO validate scenes/sources
+        //  - check that these actually exist and enable/disable buttons?
+        //  - and/or message to clients???
     } else {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: "" });
@@ -470,22 +479,44 @@ const OBS_OVERLAYS = {
     }
 }
 
-function toggleParentsOverlay() {
+function formatError600(strSource, isScene = false) {
+    if (isScene) {
+        return `Error: OBS scene "<b><span style="color: red;">${strSource}</span></b>" is missing or misspelled.`
+    } else {
+        return `Error: "<b><span style="color: red;">${strSource}</span></b>" is missing or misspelled in the OBS scene "<b><span style="color: red;">${CONFIG.obs.OVERLAY_SCENENAME}</span></b>".`
+    }
+}
+
+async function toggleParentsOverlay(ws) {
     // called by message from app.js
-    toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME);
+    const targetSource = CONFIG.obs.PARENTS_OVERLAY_SOURCENAME;
+
+    const sourceNames = obs.getOverlayCacheSourceNames();
+    if (sourceNames.includes(targetSource)) {
+        await toggleOverlay(targetSource);
+    } else {
+        broadcastStatusTextToClient(ws, formatError600(targetSource));
+    }
 };
 
 async function toggleCustomOverlay(ws) {
     // called by message from app.js
-    const overlay = OBS_OVERLAYS[CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME];
+    const targetSource = CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME;
+
+    const overlay = OBS_OVERLAYS[targetSource];
     const currentlyActive = overlay.expiresAt > Date.now();
 
     if (currentlyActive) {
-        toggleOverlay(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME, true); // this also resets the button
+        await toggleOverlay(targetSource, true); // this also resets the button
     } else {
-        const oldText = await obs.getTextSourceText(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
-        ws.send(JSON.stringify({ type: "getCustomOverlayText", oldText: oldText }));
-        // listen elsewhere for response, which then calls doCustomOverlay()
+        const sourceNames = obs.getOverlayCacheSourceNames();
+        if (sourceNames.includes(targetSource)) {
+            const oldText = await obs.getTextSourceText(targetSource);
+            ws.send(JSON.stringify({ type: "getCustomOverlayText", oldText: oldText }));
+        } else {
+            broadcastStatusTextToClient(ws, formatError600(targetSource));
+            // listen elsewhere for response, which then calls doCustomOverlay()
+        }
     }
 };
 
