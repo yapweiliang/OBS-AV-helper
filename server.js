@@ -21,6 +21,7 @@
     - CAMERA (Emitter)  - INCOMING
     - camera helper functions
 
+    - shutdown support
     - START SERVER
 */
 
@@ -668,6 +669,37 @@ async function doWakeupCamera() {
     };
     return e;    
 };
+
+// ====================================================
+// Shutdown
+// ====================================================
+
+let shuttingDown = false;
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+async function shutdown(signal) {
+    let e;
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(DEBUG_PREFIX, `${signal} received. ------------------------------\n`);
+
+    // stuff we want to do on [windows] shutdown
+    e = await camera.shutdownCamera();
+    console.log(DEBUG_PREFIX, `Camera shutdown ${(e) ? "OK" : "failed"}`);
+    resetOverlayButtons();
+
+    // other cleanup
+    obs.disconnect();
+    x32.disconnect();
+    wss.clients.forEach(client => client.close());
+    wss.close();
+    server.close();
+
+    await sleep(50);
+    console.log(DEBUG_PREFIX, "Remaining processes by end of shutdown:", process._getActiveHandles().map(h => h.constructor.name));
+    // process.exit(0); // apparently not needed
+}
 
 // ====================================================
 // Start server
