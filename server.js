@@ -433,7 +433,14 @@ obs.on("highlightOBSScene", sceneName => {
 
 obs.on("overlaySceneSelected", () => {
     resetOverlayButtons();
-})
+});
+
+obs.on("exitStarted", async () => {
+    await camera.setCameraTallyColor('blue');
+    const e = await camera.shutdownCamera();
+    console.log(DEBUG_PREFIX, `Camera shutdown when OBS exitStarted ${(e) ? "OK" : "failed"}`);
+    // server shutdown will try camera.shutdownCamera again
+});
 
 function highlightCameraPreset(preset_id) {
     activePreset = preset_id;
