@@ -179,7 +179,7 @@ function processX32Post(req, res, next) {
 
     if (CONFIG.x32.signals[signalId].type == "snippet") {
         const btnId = CONFIG.ui.buttons.find(p => p.signalId === signalId)?.id;
-        broadcastToBrowsers({ type: "dimX32SnippetButton", btnId: btnId });
+        broadcastToAllClients({ type: "dimX32SnippetButton", btnId: btnId });
     }
 
     try {
@@ -243,16 +243,19 @@ async function onConnection(ws, req) {
 // WebSocket: OUTGOING push to client browsers
 // ----------------------------------------------------
 
-function broadcastToBrowsers(obj) {
+function broadcastToAllClients(obj) {
     const msg = JSON.stringify(obj);
     wss.clients.forEach(client => {
         if ( client.readyState === WebSocket.OPEN ) { client.send(msg); }
     });
 }
 
-function broadcastStatusTextToBrowsers(text, durationMs) {
-    broadcastToBrowsers({ type: "flashStatusText", text: text, durationMs: durationMs });
-    // TODO what happens if message omits durationMs - will the final function choose default duration?
+function broadcastStatusTextToAllClients(text, durationMs) {
+    broadcastToAllClients({ type: "flashStatusText", text: text, durationMs: durationMs });
+}
+
+function broadcastStatusTextToClient(ws, text, durationMs) {
+    ws.send(JSON.stringify({ type: "flashStatusText", text: text, durationMs: durationMs }));
 }
 
 // ----------------------------------------------------
@@ -307,10 +310,7 @@ async function wsMessageHandler(data, ws) {
             break;
         case "setFocusZone":
             if (msg.id == 6) {
-                ws.send(JSON.stringify({ 
-                    type: "flashStatusText", 
-                    text: "point zone should not be used.  Ignoring."
-                }));
+                broadcastStatusTextToClient(ws, "point zone should not be used.  Ignoring.")
                 ws.send(JSON.stringify({
                     type: "updateClientFocusState"
                 })) // no additional data implies no changes, but force revert to existing value
@@ -386,15 +386,15 @@ let activePreset = -1;
 // ----------------------------------------------------
 
 x32.on("stateChanged", state => {
-    broadcastToBrowsers({ type: "x32StateChanged", state });
+    broadcastToAllClients({ type: "x32StateChanged", state });
 });
 
 x32.on("snippetLoadSuccess", state => {
-    broadcastToBrowsers({ type: "x32SnippetLoadSuccess", state });
+    broadcastToAllClients({ type: "x32SnippetLoadSuccess", state });
 });
 
 x32.on("heartbeatsMissed", state => {
-    broadcastToBrowsers({ type: "x32HeartbeatsMissed", state });
+    broadcastToAllClients({ type: "x32HeartbeatsMissed", state });
 });
 
 // ----------------------------------------------------
@@ -403,14 +403,14 @@ x32.on("heartbeatsMissed", state => {
 
 obs.on("obsConnectSuccess", async state =>  {
     if (state) {
-        broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
-        broadcastToBrowsers({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
+        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera();
         // TODO validate scenes/sources - check that these actually exist and enable/disable?
     } else {
-        broadcastToBrowsers({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
-        broadcastToBrowsers({ type: "highlightOBSScene", sceneName: "" });
-        broadcastStatusTextToBrowsers("Disconnected from OBS", 0);
+        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToAllClients({ type: "highlightOBSScene", sceneName: "" });
+        broadcastStatusTextToAllClients("Disconnected from OBS", 0);
         resetOverlayButtons();
     }
 })
@@ -420,7 +420,7 @@ obs.on("setCameraTallyColor", state => {
 });
 
 obs.on("updateOBSLiveStatus", (recordState, streamState) => {
-    broadcastToBrowsers({ type: "updateOBSLiveStatus", recordState: recordState, streamState: streamState});
+    broadcastToAllClients({ type: "updateOBSLiveStatus", recordState: recordState, streamState: streamState});
 });
 
 obs.on("highlightCameraPreset", preset_id => {
@@ -428,7 +428,7 @@ obs.on("highlightCameraPreset", preset_id => {
 });
 
 obs.on("highlightOBSScene", sceneName => {
-    broadcastToBrowsers({ type: "highlightOBSScene", sceneName: sceneName});
+    broadcastToAllClients({ type: "highlightOBSScene", sceneName: sceneName});
 });
 
 obs.on("overlaySceneSelected", () => {
@@ -437,7 +437,7 @@ obs.on("overlaySceneSelected", () => {
 
 function highlightCameraPreset(preset_id) {
     activePreset = preset_id;
-    broadcastToBrowsers({ type: "highlightCameraPreset", preset_id: activePreset});
+    broadcastToAllClients({ type: "highlightCameraPreset", preset_id: activePreset});
 };
 
 // ....................................................
@@ -546,9 +546,9 @@ function updateOverlayButtonClass(sourceName) {
     const overlay = OBS_OVERLAYS[sourceName];
     const remainingMs = overlay.expiresAt - Date.now();
     if (remainingMs <= 0) {
-        broadcastToBrowsers({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: false });
+        broadcastToAllClients({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: false });
     } else {
-        broadcastToBrowsers({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: true });
+        broadcastToAllClients({ type: "updateOverlayButtonClass", btnId: overlay.buttonId, state: true });
     }
 }
 
@@ -557,7 +557,7 @@ function updateOverlayButtonText(sourceName) {
     const remainingMs = overlay.expiresAt - Date.now();
 
     if (remainingMs <= 0) {
-        broadcastToBrowsers({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+        broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
             text: overlay.buttonBaseText });
         return;
     }
@@ -566,7 +566,7 @@ function updateOverlayButtonText(sourceName) {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    broadcastToBrowsers({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+    broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
         text: `${overlay.buttonBaseText.split(" ")[0]}... (${timeString})` });
 }
 
@@ -579,13 +579,13 @@ camera.on("updateClientTallyLightIndicator", color => {
     // because obs.js & server.js both can control Tally Light
 
     // optionally intercept color=="black" and change it (for failed camera API call)
-    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: color});
+    broadcastToAllClients({ type: "updateClientTallyLightIndicator", color: color});
 });
 
 camera.on("updateClientFocusState", (mode, locked, zone) => {
     // TODO should this be called from camera.setFocusMode/setFocusZone
     // or from server.js (upon requesting change in Focus settings)
-    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
+    broadcastToAllClients({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
 });
 
 // ....................................................
@@ -598,19 +598,19 @@ function sleep(ms) {
 
 async function refreshCameraFocusZone(res) {
     res ??= await camera.getFocusZone()
-    broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: res });
+    broadcastToAllClients({ type: "updateClientFocusState", focus_zone: res });
     return res;
 }
 
 async function refreshCameraFocusMode() {
     const res = await camera.summariseFocusMode(); // expect { mode: null, locked: null } if failure
-    broadcastToBrowsers({ type: "updateClientFocusState", focus_mode: res.mode, focus_locked: res.locked });
+    broadcastToAllClients({ type: "updateClientFocusState", focus_mode: res.mode, focus_locked: res.locked });
     return res;
 }
 
 async function refreshCameraTallyColor() {
     const res = await camera.getCameraTallyColor();
-    broadcastToBrowsers({ type: "updateClientTallyLightIndicator", color: res});
+    broadcastToAllClients({ type: "updateClientTallyLightIndicator", color: res});
     return res;
 }
 
@@ -627,45 +627,45 @@ async function refreshCameraAllStates() {
 
 async function doRebootCamera() {
     let msg = "Restarting camera takes a minute.";
-    broadcastStatusTextToBrowsers(msg, 0); // 0 = leave this message on
+    broadcastStatusTextToAllClients(msg, 0); // 0 = leave this message on
 
     const e = await camera.rebootCamera();
 
     if (e) {
-        broadcastStatusTextToBrowsers(`${msg}  Shutting down now...`, 0);
+        broadcastStatusTextToAllClients(`${msg}  Shutting down now...`, 0);
         await sleep(30000);         // PTZ startup 'dance' occurs at about 26 seconds
-        broadcastStatusTextToBrowsers(`${msg}  Starting up...`, 0);
+        broadcastStatusTextToAllClients(`${msg}  Starting up...`, 0);
         await sleep(27000);         // total turnaround takes 62 seconds, countdown 5 seconds before
         msg = `${msg}  Nearly there<br>`;
         let i = 15;                 // but allow additional 10 seconds before giving up
         while (true) {
             msg = `${msg}.`;
-            broadcastStatusTextToBrowsers(msg, 0);
+            broadcastStatusTextToAllClients(msg, 0);
             await sleep(1000);
             const cameraResponse = await refreshCameraAllStates(); // TODO use different function to test
             if (cameraResponse) {
-                broadcastStatusTextToBrowsers("Camera on.  Please wait for image.");
+                broadcastStatusTextToAllClients("Camera on.  Please wait for image.");
                 break;
             };
             i--;
             if (i <= 0) {
-                broadcastStatusTextToBrowsers("Camera unresponsive.  Try restarting camera a different way.", 0);
+                broadcastStatusTextToAllClients("Camera unresponsive.  Try restarting camera a different way.", 0);
                 break;
             }
         }
     } else {
-        broadcastStatusTextToBrowsers("Restart instruction failed.  Try restarting camera a different way.", 0);
+        broadcastStatusTextToAllClients("Restart instruction failed.  Try restarting camera a different way.", 0);
     }
     return e;
 };
 
 async function doWakeupCamera() {
-    broadcastStatusTextToBrowsers("Sending power_on instruction to camera.", 0);
+    broadcastStatusTextToAllClients("Sending power_on instruction to camera.", 0);
     const e = await camera.wakeUpCamera();
     if (e) {
-        broadcastStatusTextToBrowsers("Camera power_on OK.");
+        broadcastStatusTextToAllClients("Camera power_on OK.");
     } else {
-        broadcastStatusTextToBrowsers("Camera unresponsive.  Try restarting it.", 0);
+        broadcastStatusTextToAllClients("Camera unresponsive.  Try restarting it.", 0);
     };
     return e;    
 };
