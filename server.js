@@ -175,7 +175,7 @@ function processX32Post(req, res, next) {
     // POST received from public/app.js for X32
 
     const signalId = req.params.name;
-    console.log( DEBUG_PREFIX, "ACTION:", signalId );
+    console.log( DEBUG_PREFIX, "X32 ACTION:", signalId );
 
     if (CONFIG.x32.signals[signalId].type == "snippet") {
         const btnId = CONFIG.ui.buttons.find(p => p.signalId === signalId)?.id;
