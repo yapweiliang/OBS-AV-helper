@@ -295,18 +295,18 @@ async function wsMessageHandler(data, ws) {
             if (e!=null) {
                 const res = await refreshCameraFocusMode(); // reads then pushes to client
             }
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `Toggle Auto Focus failed`);
             break;
         case "onePushFocus":
             e = await camera.onePushFocus();
             if (e!=null) {
                 const res = refreshCameraFocusMode(); // reads then pushes to client
             }
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `One Push Focus failed`);
             break;
         case "onePushWhiteBalance":
             e = await camera.onePushWhiteBalance();
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `One Push White Balance failed`);
             break;
         case "setFocusZone":
             if (msg.id == 6) {
@@ -325,18 +325,13 @@ async function wsMessageHandler(data, ws) {
             // TODO can we disable camera buttons temporarily?
             highlightCameraPreset(-1);
             e = await camera.reloadCameraSettings();
-            // TODO statusText update
+            if (!e) broadcastStatusTextToClient(ws, `Reset Camera failed`);
             await refreshCameraAllStates();
             break;
         case "restartCamera":
             // TODO can we disable camera buttons temporarily?
             highlightCameraPreset(-1);
             await doRebootCamera();
-            await refreshCameraAllStates();
-            break;
-        case "wakeUpCamera":
-            // TODO can we disable camera buttons temporarily?
-            await doWakeupCamera();
             await refreshCameraAllStates();
             break;
 
@@ -366,8 +361,7 @@ async function wsMessageHandler(data, ws) {
             doCustomOverlay(msg.newText);
             break;
         case "toggleStreamStartStop":
-            console.log(DEBUG_PREFIX, "PLACEHOLDER toggle stream startstop");
-            // TODO update button status
+            broadcastStatusTextToClient(ws, "Not yet implemented"); // TODO
             break;
         
         default:
