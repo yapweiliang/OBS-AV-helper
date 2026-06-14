@@ -58,15 +58,16 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
 
     // X32 actions
     buttons: [
-        { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
+        { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
+        { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
+        { id: "btnBandSinging",     signalId: "bandSinging",    label: "𝄞🎜 Band Singing 🎹🎸" },
         { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" },
-        { id: "btnMuteAll",         signalId: "muteAll",        label: "Mute All Mics" },
         { id: "" },
         { id: "btnLecternOn",       signalId: "lecternOn",      label: "Lectern On" },
         { id: "btnLecternLouder",   signalId: "lecternLouder",  label: "Lectern Louder" },
-        { id: "btnBandSinging",     signalId: "bandSinging",    label: "Band Singing" },
-        { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
-        { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
+        { id: "btnMuteSpeech",      signalId: "muteSpeech",     label: "Mute Speech" },
+        { id: "" },
+        { id: "btnMuteAll",         signalId: "muteAll",        label: "Mute All Mics" },
         { id: "" },
         { id: "btnInitialise",      signalId: "initialise",     label: "Initialise...",
             confirm: true, helpText: "This will do basic settings for speech" }
