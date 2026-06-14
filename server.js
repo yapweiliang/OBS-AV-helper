@@ -43,6 +43,7 @@ const CAMERA = require("./lib/camera.js");
 
 // constants
 const DEBUG_PREFIX = "[server.js]";
+function debugPrefix() { return `${new Date().toLocaleTimeString()} ${DEBUG_PREFIX}` };
 const LISTEN_PORT = 3000;
 
 // constants - for Daily Code authentication
@@ -127,11 +128,11 @@ app.get("/login", (req, res) => { res.sendFile(LOGIN_PAGE); });
 app.post("/login", (req, res) => {
     const submittedCode = (req.body.code || "").toUpperCase().trim();
     if (submittedCode !== getDailyCode()) {
-        console.log(DEBUG_PREFIX, `Invalid code submitted from ip: "${req.ip}" for host: "${req.host}"`);
+        console.log(debugPrefix(), `Invalid code submitted from ip: "${req.ip}" for host: "${req.host}"`);
         return res.status(403).json({ success: false });
     }
     req.session.authenticated = true;
-    console.log(DEBUG_PREFIX, `Client (ip: "${req.ip}") authenticated, for host "${req.host}"`);
+    console.log(debugPrefix(), `Client (ip: "${req.ip}") authenticated, for host "${req.host}"`);
     res.json({ success: true });
 });
 
@@ -175,7 +176,7 @@ function processX32Post(req, res, next) {
     // POST received from public/app.js for X32
 
     const signalId = req.params.name;
-    console.log( DEBUG_PREFIX, "X32 ACTION:", signalId );
+    console.log( debugPrefix(), "X32 ACTION:", signalId );
 
     if (CONFIG.x32.signals[signalId].type == "snippet") {
         const btnId = CONFIG.ui.buttons.find(p => p.signalId === signalId)?.id;
@@ -187,7 +188,7 @@ function processX32Post(req, res, next) {
         res.json({ ok: true, action: signalId });
 
     } catch (err) {
-        console.error( DEBUG_PREFIX, "Action error:", err );
+        console.error( debugPrefix(), "Action error:", err );
         res.status(500).json({ ok: false, error: err.message });
     }
 };
@@ -203,7 +204,7 @@ app.use((req, res) => res.status(404).send("Not found"));
 server.on("upgrade", (req, socket, head) => {
     sessionParser(req, {}, () => {
         if (!isLocal(req) && !req.session?.authenticated) {
-            console.log(DEBUG_PREFIX, `Rejected websocket (remoteAddress: ${req.socket.remoteAddress})`);
+            console.log(debugPrefix(), `Rejected websocket (remoteAddress: ${req.socket.remoteAddress})`);
             socket.destroy();
             return;
         }
@@ -217,7 +218,7 @@ server.on("upgrade", (req, socket, head) => {
 wss.on("connection", (ws, req) => onConnection(ws, req));
 
 async function onConnection(ws, req) {
-    console.log(DEBUG_PREFIX, "Browser connected");
+    console.log(debugPrefix(), "Browser connected", new Date());
     // send X32 state
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
     ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
@@ -268,7 +269,7 @@ async function wsMessageHandler(data, ws) {
     try {
         msg = JSON.parse(data.toString());
     } catch (error) {
-        console.error(DEBUG_PREFIX, "wsMessageHandler error:", error)
+        console.error(debugPrefix(), "wsMessageHandler error:", error)
         return;
     }
     switch (msg.type) {
@@ -365,7 +366,7 @@ async function wsMessageHandler(data, ws) {
             break;
         
         default:
-            console.warn(DEBUG_PREFIX, "Unknown incoming message:", msg.type)
+            console.warn(debugPrefix(), "Unknown incoming message:", msg.type)
     }
 }
 
@@ -441,7 +442,7 @@ obs.on("overlaySceneSelected", () => {
 obs.on("exitStarted", async () => {
     await camera.setCameraTallyColor('blue');
     const e = await camera.shutdownCamera();
-    console.log(DEBUG_PREFIX, `Camera shutdown when OBS exitStarted ${(e) ? "OK" : "failed"}`);
+    console.log(debugPrefix(), `Camera shutdown when OBS exitStarted ${(e) ? "OK" : "failed"}`);
     // server shutdown will try camera.shutdownCamera again
 });
 
@@ -714,11 +715,11 @@ async function shutdown(signal) {
     let e;
     if (shuttingDown) return;
     shuttingDown = true;
-    console.log(DEBUG_PREFIX, `${signal} received. ------------------------------\n`);
+    console.log(debugPrefix(), `${signal} received. ------------------------------\n`);
 
     // stuff we want to do on [windows] shutdown
     e = await camera.shutdownCamera();
-    console.log(DEBUG_PREFIX, `Camera shutdown ${(e) ? "OK" : "failed"}`);
+    console.log(debugPrefix(), `Camera shutdown ${(e) ? "OK" : "failed"}`);
     resetOverlayButtons();
 
     // other cleanup
@@ -729,7 +730,7 @@ async function shutdown(signal) {
     server.close();
 
     await sleep(50);
-    console.log(DEBUG_PREFIX, "Remaining processes by end of shutdown:", process._getActiveHandles().map(h => h.constructor.name));
+    console.log(debugPrefix(), "Remaining processes by end of shutdown:", process._getActiveHandles().map(h => h.constructor.name));
     // process.exit(0); // apparently not needed
 }
 
@@ -738,6 +739,6 @@ async function shutdown(signal) {
 // ====================================================
 
 server.listen(LISTEN_PORT, () => {
-    console.log(DEBUG_PREFIX, `Listening on http://localhost:${LISTEN_PORT}`);
-    console.log(DEBUG_PREFIX, `Today's access code: ${getDailyCode()}`);
+    console.log(debugPrefix(), `Listening on http://localhost:${LISTEN_PORT}`);
+    console.log(debugPrefix(), `Today's access code: ${getDailyCode()}`);
 });
