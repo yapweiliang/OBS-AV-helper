@@ -2,6 +2,10 @@ const isDev = (process.env.NODE_ENV === 'development');
 
 const config = {};
 
+config.server = {
+    LISTEN_PORT: 3000,
+}
+
 config.obs = {  // this is passed to the obs.js module on initialisation
 
     // `ws://${host}`
@@ -55,6 +59,8 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
 
 config.ui = {   // this is exposed to the app.js module, and also applicable to server.js
     isDevelopment: isDev,
+
+    urlToShow: `http://pc-obs.av:${config.server.LISTEN_PORT}`,
 
     // X32 actions
     buttons: [

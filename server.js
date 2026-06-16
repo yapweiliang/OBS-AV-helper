@@ -44,7 +44,6 @@ const CAMERA = require("./lib/camera.js");
 // constants
 const DEBUG_PREFIX = "[server.js]";
 function debugPrefix() { return `${new Date().toLocaleTimeString()} ${DEBUG_PREFIX}` };
-const LISTEN_PORT = 3000;
 
 // constants - for Daily Code authentication
 // const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ2346789";
@@ -738,7 +737,7 @@ async function shutdown(signal) {
 // Start server
 // ====================================================
 
-server.listen(LISTEN_PORT, () => {
-    console.log(debugPrefix(), `Listening on http://localhost:${LISTEN_PORT}`);
+server.listen(CONFIG.server.LISTEN_PORT, () => {
+    console.log(debugPrefix(), `Listening on http://localhost:${CONFIG.server.LISTEN_PORT}`);
     console.log(debugPrefix(), `Today's access code: ${getDailyCode()}`);
 });
