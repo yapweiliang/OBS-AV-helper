@@ -43,6 +43,7 @@ button {
     cursor: pointer;
 
     font-size: 18px;
+    line-height: 1;
     /* transition: all 0.2s ease;*/
 
     /* touchscreen stuff moved to body */
