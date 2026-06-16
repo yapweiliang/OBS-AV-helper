@@ -1,0 +1,22 @@
+{
+  "name": "av-helper",
+  "output": "av-helper.zip",
+  "files": [
+
+    "package.json",
+    "package-lock.json",
+
+    "README.md",
+    "LICENSE",
+
+    "config/**",
+    "frontend/**",
+    "lib/**",
+    "server.js"
+  ],
+  "ignore": [
+    "*.log",
+    ".env",
+    "config.previous.*"
+  ]
+}
