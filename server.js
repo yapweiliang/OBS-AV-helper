@@ -14,7 +14,7 @@
     - websocket push to browsers (helpers)
     - websocket INCOMING from app.js
 
-    - set up X32/OBS/Camera (Emitter)    
+    - set up X32/OBS/Camera (Emitter)
     - X32 (Emitter)     - INCOMING
     - OBS (Emitter)     - INCOMING
     - obs helper functions (overlay)
@@ -141,7 +141,7 @@ app.post("/logout", (req, res) => { req.session.destroy(() => { res.sendFile(LOG
 
 // local retrieval of daily code
 app.get("/daily-code", (req, res) => {
-    if (!isLocal(req)) { 
+    if (!isLocal(req)) {
         return res.status(403).end(); // 403 = forbidden
     }
     res.json({ code: getDailyCode() });
@@ -153,9 +153,9 @@ app.use("/app", requireAuth, express.static(path.join(__dirname, "frontend/app")
 
 app.get("/api/config", requireAuth, (req, res) => {
     // return only the portion below for the client app.js
-    res.json({ 
+    res.json({
         ui: CONFIG.ui
-     }) 
+     })
     // { ui: CONFIG.ui } will keep same structure as res.json(CONFIG) without exposing the rest
     // { CONFIG.ui } will need some rewriting in app.js, but will be cleaner there
 });
@@ -230,7 +230,7 @@ async function onConnection(ws, req) {
     // send obs state
     ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
     ws.send(JSON.stringify({ type: "updateOBSLiveStatus", recordState: obs.b_recordState, streamState: obs.b_streamState }));
-    if (obs.obsConnectSuccess) {        
+    if (obs.obsConnectSuccess) {
         ws.send(JSON.stringify({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene()  }));
     }
     resetOverlayButtons();
@@ -363,7 +363,7 @@ async function wsMessageHandler(data, ws) {
         case "toggleStreamStartStop":
             broadcastStatusTextToClient(ws, "Not yet implemented"); // TODO
             break;
-        
+
         default:
             console.warn(debugPrefix(), "Unknown incoming message:", msg.type)
     }
@@ -563,11 +563,11 @@ async function toggleOverlay( sourceName, reset = false ) {
 function refreshOverlayButtons() {
     updateOverlayButtonClass(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME);
     updateOverlayButtonClass(CONFIG.obs.CUSTOM_OVERLAY_SOURCENAME);
-    // if expanding, then forEach sourcename in config.ui.overlays ... 
+    // if expanding, then forEach sourcename in config.ui.overlays ...
 }
 
 function resetOverlayButtons() {
-    // to be called if OBS overlay scene is selected, 
+    // to be called if OBS overlay scene is selected,
     // or when obs disconnected
     // or when app.js connects
     toggleOverlay(CONFIG.obs.PARENTS_OVERLAY_SOURCENAME, true);
@@ -589,7 +589,7 @@ function updateOverlayButtonText(sourceName) {
     const remainingMs = overlay.expiresAt - Date.now();
 
     if (remainingMs <= 0) {
-        broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+        broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId,
             text: overlay.buttonBaseText });
         return;
     }
@@ -598,7 +598,7 @@ function updateOverlayButtonText(sourceName) {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId, 
+    broadcastToAllClients({ type: "updateOverlayButtonText", btnId: overlay.buttonId,
         text: `${overlay.buttonBaseText.split(" ")[0]}... (${timeString})` });
 }
 
@@ -653,7 +653,7 @@ async function refreshCameraAllStates() {
     // TODO how to return failure?
     // TODO shall we do away with this, and call individually?
     // TODO how to use as a test for camera responsiveness?
-    
+
     // this.callAPI(j_camera_get_output_info, GET_INFO);
 }
 
@@ -699,7 +699,7 @@ async function doWakeupCamera() {
     } else {
         broadcastStatusTextToAllClients("Camera unresponsive.  Try restarting it.", 0);
     };
-    return e;    
+    return e;
 };
 
 // ====================================================

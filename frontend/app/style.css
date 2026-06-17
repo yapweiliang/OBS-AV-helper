@@ -75,7 +75,7 @@ button:disabled {
 }
 
 /* in case we need to override button:active
-.hold-button:active { 
+.hold-button:active {
     background-color: var(--button-bg);
 }
 */
@@ -99,17 +99,17 @@ button:disabled {
 
 .button--highlighted {
     --button-bg: var(--green3);
-    --button-bg-hover: var(--green2); 
+    --button-bg-hover: var(--green2);
 }
 
 .button--unmuted {
     --button-bg: var(--red6);
-    --button-bg-hover: var(--red5); 
+    --button-bg-hover: var(--red5);
 }
 
 .button--muted {
     --button-bg: red;
-    --button-bg-hover: var(--red3); 
+    --button-bg-hover: var(--red3);
 }
 
 .button--waiting {
@@ -167,11 +167,11 @@ button:disabled {
     width: 0%;
     height: calc(var(--padding) * 0.67);
     background: red;
-    
+
     pointer-events: none;
 }
 
-body { 
+body {
     font-family: sans-serif;
     font-size: small;
     background-color: var(--bg_base);

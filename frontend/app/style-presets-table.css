@@ -7,12 +7,12 @@
 .set-btn {
     --button-bg: var(--color-warning);
     --button-bg-hover: var(--color-warning-hover);
-    --button-bg-hold: var(--color-warning-hold);    
+    --button-bg-hold: var(--color-warning-hold);
 }
 
 .presets-table {
     border-collapse: collapse;
-    width: 100%;   
+    width: 100%;
 }
 
 .presets-table th, td {
