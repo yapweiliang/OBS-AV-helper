@@ -27,12 +27,12 @@ let cameraFocusLocked = null;
 let serverConnected = false; // can this go to STATE or should that be X32_STATE?
 let reconnectTimer = null;
 let x32HeartbeatsMissedCounter = 0;  // number of poll cycles it has been silent
-let obsConnectSuccess = null; // disconnected, connected, 
+let obsConnectSuccess = null; // disconnected, connected,
 let obsRecordState = true; // live (streaming, recordning)
 let obsStreamState = true;
 let obsActiveScene = null;
 
-const WS_RECONNECT_MS = 5000;   // 
+const WS_RECONNECT_MS = 5000;   //
 
 const OBS_SCENE_BUTTONS_CONTAINER = "obsSceneButtonsContainer";
 const eid_obsCurrentScene = document.getElementById("obsCurrentScene");
@@ -45,6 +45,7 @@ const eid_statusTextArea = document.getElementById('statusTextArea');
 const eid_statusText = document.getElementById('statusText');
 const eid_tallyTextArea = document.getElementById('tallyTextArea');
 const eid_tallyText = document.getElementById('tallyText'); // use for OBS STATE
+const eid_versionString = document.getElementById('versionString');
 const eid_developmentStatus = document.getElementById('developmentStatus');
 const nothingToFlash = ""; // what to display when the message is cleared
 
@@ -75,7 +76,7 @@ const FOCUS_ZONES = [
     { id: 1, label: 'centre' },
     { id: 2, label: 'bottom' },
     { id: 3, label: 'left'   },
-    { id: 4, label: 'right'  },        
+    { id: 4, label: 'right'  },
     { id: 5, label: 'all'    },
     { id: 6, label: 'point (do not use)' }
 ];
@@ -96,7 +97,7 @@ const OBS_TAG = "__OBS__";
     OUTLINE
 
     - init & config loading
-    - ACTIONS    
+    - ACTIONS
     - websocket stuff and connectivity indicators and incoming-message handling
 
     - render UI (overall)
@@ -150,6 +151,7 @@ async function initialise() {
         }
     });
 
+    eid_versionString.innerHTML = CONFIG.ui.versionString;
     if (!window.location.hostname.includes("localhost") || !CONFIG.ui.isDevelopment) {
         // remove contextmenu except on local development machine
         document.addEventListener("contextmenu", e => { e.preventDefault(); });
@@ -161,7 +163,7 @@ async function initialise() {
     // - await navigator.wakeLock.request("screen");
     // - await screen.orientation.lock(...)
 
-    connectWebSocket(); 
+    connectWebSocket();
     // socket open calls onSocketOpen(), which
     // - enables action buttons, updatesconnectionstatus, etc
 }
@@ -260,7 +262,7 @@ function onSocketMessage(event) {
                     lastHighlightedX32SnippetButton.classList.remove("button--highlighted");
                     lastHighlightedX32SnippetButton = null;
                 }, SNIPPET_BUTTON_HIGHLIGHT_DURATION_MS)
-               
+
             } else {
                 // in this situation a different device has selected a snippet
                 // - nothing to do, as highlight already cancelled
@@ -271,19 +273,19 @@ function onSocketMessage(event) {
             updateX32ConnectionStatus();
             break;
 
-        // camera-related messages    
+        // camera-related messages
         case "highlightCameraPreset":
-            highlightCameraPreset(msg.preset_id)            
+            highlightCameraPreset(msg.preset_id)
             break;
         case "updateClientTallyLightIndicator":
             cameraTallyLightColor = msg.color;
             updateCameraUIStatus();
             break;
         case "updateClientFocusState":
-            if (msg.focus_zone) { 
+            if (msg.focus_zone) {
 console.log("updateClientFocusState received focus_zone", msg.focus_zone);
                 cameraFocusZoneId = msg.focus_zone;
-console.log("updateClientFocusState received focus_zone", msg.focus_zone, cameraFocusZoneId);                
+console.log("updateClientFocusState received focus_zone", msg.focus_zone, cameraFocusZoneId);
             }
             if (msg.focus_mode) {
 console.log("updateClientFocusState received focus_mode", msg.focus_mode);
@@ -423,7 +425,7 @@ function renderX32Buttons() {
         if (btn.id == "") {
             const sp = document.createElement("span");
             sp.innerHTML = GAP_BETWEEN_BUTTONS;
-            
+
             container.appendChild(sp);
         } else {
             const el = document.createElement("button");
@@ -523,7 +525,7 @@ function renderPresetsTable(activePreset = -1) {
                     ${preset.PresetNumber}
                 </td>
                 <td>
-                    <button class="call-btn hold-button" 
+                    <button class="call-btn hold-button"
                             data-action="callPreset"
                             data-id="${preset.PresetNumber}">
                         ${preset.PresetName}
@@ -547,7 +549,7 @@ function renderPresetsTable(activePreset = -1) {
         if (activePreset >= 0) {
             highlightCameraPreset(activePreset); // re-highlight if it was already highlighted
         }
-    }        
+    }
 }
 
 function renderFocusZones() {
@@ -556,7 +558,7 @@ function renderFocusZones() {
         option.value = zone.id;
         option.textContent = zone.label;
         eid_selFocusZoneSelect.appendChild(option);
-    };    
+    };
 };
 
 // ----------------------------------------------------
@@ -599,7 +601,7 @@ function updateX32ControlsStatus() {
 
 // function updateAllUI() {  // TODO this is not called?
 //     // controls, not connection
-// 
+//
 //     updateX32ControlsStatus(); // buttons, indicators, faders
 //     updateCameraUIStatus(); // tally light
 //     updateOBSUIStatus(); // streaming / recording
@@ -672,8 +674,8 @@ function doCustomOverlayText(text) {
     }
     */
 
-    myInputTextDialogBox = EasyDialogBox.create("inputTextDialog", "dlg-prompt dlg-disable-clickout dlg-rounded", 
-        "Custom Overlay Text", 
+    myInputTextDialogBox = EasyDialogBox.create("inputTextDialog", "dlg-prompt dlg-disable-clickout dlg-rounded",
+        "Custom Overlay Text",
         "Please enter the text to display.<br>Examples: <i>Livestream Started, Hello</i><br><b><i>Avoid identifiable information (names, car plates, etc)</i></b>");
 
     myInputTextDialogBox.onCreate = function() {
@@ -697,7 +699,7 @@ function doCustomOverlayText(text) {
 async function showDailyCode() {
     const res = await fetch("/daily-code");
     let str;
-    
+
     if (!res.ok) {
         if (res.status == 403) {
             str = `Login codes are not revealed on remote devices`;
@@ -712,7 +714,7 @@ async function showDailyCode() {
 }
 
 // ----------------------------------------------------
-// UPDATE general UI 
+// UPDATE general UI
 // ----------------------------------------------------
 
 function enableOBSActionButtons(enabled = true) {
@@ -726,7 +728,7 @@ function enableOBSActionButtons(enabled = true) {
     for (const btn of OTHER_OBS_ACTION_BUTTONS) {
         const el = document.getElementById(btn);
         el.disabled = !enabled;
-    }    
+    }
 
     // TODO is this a good place to enable/disable the wrongly-mapped buttons?
     // TODO perhaps updateoverlaycache should send an overlayCacheUpdated message for server to update but this does not factor in renamed scenes
@@ -803,7 +805,7 @@ function updateX32Indicators() {
 }
 
 function updateX32Faders() {
-    
+
     for (const fdr of CONFIG.ui.faders) {
 
         const el = document.getElementById(fdr.id);
@@ -867,12 +869,12 @@ function updateCameraUIStatus() {
     if (cameraFocusZoneId == null) {
         eid_selFocusZoneSelect.classList.add('stale');
     } else {
-        eid_selFocusZoneSelect.value = String(cameraFocusZoneId); 
+        eid_selFocusZoneSelect.value = String(cameraFocusZoneId);
         eid_selFocusZoneSelect.classList.remove('stale');
     }
 
     eid_btnToggleAutoFocus.classList.remove("button--highlighted");
-    eid_btnOnePushFocus.classList.remove("button--highlighted");    
+    eid_btnOnePushFocus.classList.remove("button--highlighted");
     if (cameraFocusMode == "OP") {
         eid_btnOnePushFocus.classList.add("button--highlighted");
         eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus";
@@ -992,8 +994,8 @@ function initHoldButton(button) {
         }, holdMs);
     }
 
-    if ((button.dataset.bypassHold != undefined) || (holdMs <= 0)) { 
-        button.classList.add("hold-bypassed-button") 
+    if ((button.dataset.bypassHold != undefined) || (holdMs <= 0)) {
+        button.classList.add("hold-bypassed-button")
     }
     button.addEventListener("pointerdown", startHold);
     button.addEventListener("pointerup", onPointerUp);
@@ -1004,7 +1006,7 @@ function initHoldButton(button) {
 
 async function runHoldAction(actionName, button) {
     // TODO disableCameraActionButtons disableActionButtons();
-    
+
     button.classList.add("button--waiting");
 
     const allowedMessages = [
@@ -1067,7 +1069,7 @@ async function runHoldAction(actionName, button) {
                 console.warn("Unknown hold action:", actionName);
         }
     }
-    
+
     button.classList.remove("button--waiting");
     // TODO camera action buttons disableActionButtons('reset');
 }

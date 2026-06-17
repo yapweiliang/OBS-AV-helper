@@ -1,4 +1,5 @@
 const isDev = (process.env.NODE_ENV === 'development');
+const { version, name } = require("../package.json");
 
 const config = {};
 
@@ -19,14 +20,14 @@ config.obs = {  // this is passed to the obs.js module on initialisation
     PARENTS_OVERLAY_SOURCENAME: "parents_overlay",      // this must match the source name in the overlay scene
     CUSTOM_OVERLAY_SOURCENAME: "custom_overlay",        // this must match the source name in the overlay scene
     // see also the scene/overlay buttons in config.ui below
-    
+
 }
 
 config.camera = {   // this is passed to the camera.js module on initialisation
 
     isDevelopment: isDev,
     // `http://${config.CAMERA_IP}`
-    CAMERA_IP: isDev ? "ubuntu-server.rarebits:5000" : "192.168.32.107"  
+    CAMERA_IP: isDev ? "ubuntu-server.rarebits:5000" : "192.168.32.107"
 }
 
 config.x32 = {  // this is passed to the x32.js module on initialisation
@@ -59,6 +60,7 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
 
 config.ui = {   // this is exposed to the app.js module, and also applicable to server.js
     isDevelopment: isDev,
+    versionString: `${name} v${version}`,
 
     urlToShow: `http://pc-obs.av:${config.server.LISTEN_PORT}`,
 
@@ -109,7 +111,7 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
         { id: "btnOBS_04", sceneName: "4 STAGE",                  label: "STAGE (to rename)" },
         { id: "" },
         { id: "btnOBS_05", sceneName: "5 LECTERN",                label: "LECTERN" },
-        { id: "btnOBS_06", sceneName: "6 Lectern as inset",       label: "Lectern as inset" },          
+        { id: "btnOBS_06", sceneName: "6 Lectern as inset",       label: "Lectern as inset" },
         { id: "btnOBS_07", sceneName: "7 Reading",                label: "Lectern Reading" },
         { id: "btnOBS_08", sceneName: "8 Fullscreen Laptop",      label: "Fullscreen Laptop" },
         { id: "" },

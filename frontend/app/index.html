@@ -23,7 +23,7 @@
             <col class="status-tally-width"/>
             <col/><!-- ignore third column for full width -->
             <col class="status-buttons-width"/>
-            
+
             <tr>
                 <td class="">
                     <div><span id="serverStatus" >⚪</span>Node</div>
@@ -32,7 +32,7 @@
                 </td>
                 <td class="status-tally-area" id="tallyTextArea">
                     <span id="tallyText">unknown</span>
-                </td>                
+                </td>
                 <td class="status-text-area" id="statusTextArea">
                     <span id="statusText">Hello!</span>
                 </td>
@@ -51,7 +51,7 @@
                         id="fullScreenButton"
                         title="full screen">
                         ⛶
-                    </button>               
+                    </button>
                 </td>
             </tr>
 <!--        </tbody> -->
@@ -68,7 +68,7 @@
                 <td><h2>OBS Control</h2></td>
                 <td><h2>Camera Control</h2></td>
             </tr>
-            
+
         </thead>
         <tbody>
             <tr class="big-panel--main">
@@ -102,7 +102,7 @@
                             data-hold-ms="2000"
                             data-action="toggleStreamStartStop">
                             <span class="label">Start/Stop stream...</span>
-                        </button>                        
+                        </button>
                     </div>
                     <div>OBS scene: <span id="obsCurrentScene"></span></div>
                 </td>
@@ -113,9 +113,9 @@
                         <table class="buttons-table">
                             <tr>
                                 <td class="row-of-buttons-control">
-                                    Focus Zone: 
+                                    Focus Zone:
                                     <select class="focus-zone-select"
-                                        id="selFocusZoneSelect"                
+                                        id="selFocusZoneSelect"
                                         title="Focus Zone">
                                     </select>
                                     <button class="button--icon"
@@ -124,7 +124,7 @@
                                         ℹ
                                     </button>
                                 </td>
-                            </tr>                            
+                            </tr>
                             <tr>
                                 <td>
                                     <button id="btnToggleAutoFocus"
@@ -154,19 +154,19 @@
                                 </td>
                             </tr>
                         </table>
-                 
+
                         <!--------------------------------->
                         <div id="presetTableInlineContainer"></div>
                         <!--------------------------------->
                         &nbsp; <!--SPACER-->
-                        <button id="btnResetCamera" 
+                        <button id="btnResetCamera"
                             title="This will re-set the camera settings"
                             class="hold-button button--prompt"
                             data-hold-ms="1500"
                             data-action="resetCamera">
                             Reset Camera...
                         </button>
-                        <button id="btnRestartCamera" 
+                        <button id="btnRestartCamera"
                             title="This will restart the camera (takes about a minute)"
                             class="hold-button button--prompt"
                             data-hold-ms="1500"
@@ -181,7 +181,7 @@
     </table>
 
     <!------------------------------------------------------------------------>
-    Version 1.0 <span id="developmentStatus"></span>
+    <span id="developmentStatus"></span><span id="versionString"></span>
 
     <!------------------------------------------------------------------------>
     <div id="modalRoot"></div>
