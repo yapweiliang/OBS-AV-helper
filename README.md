@@ -43,16 +43,16 @@ This is a node server that:
     * download and run `install.ps1` from https://github.com/yapweiliang/OBS-AV-helper
     * https://github.com/yapweiliang/OBS-AV-helper/blob/main/install.ps1
 
-1. Manual install, on the PC that runs OBS
+1. Manual first time installation, on the PC that runs OBS
     * Download the entire folder structure from https://github.com/yapweiliang/OBS-AV-helper
     * save to `....\OneDrive\av-shared\OBS-AV-helper\`
 
     * `cd` to that folder
-    * `npm install`
+    * `npm ci`
     * `nssm install av-helper`
         * path: `C:\Program Files\nodejs\node.exe`
-        * arguments: `....\OneDrive\location_of_my\av-helper\server.js`
-        * startup directory: `....\OneDrive\location_of_my\av-helper`
+        * arguments: `....\OneDrive\av-shared\av-helper\server.js`
+        * startup directory: `....\OneDrive\av-shared\av-helper`
         * TODO other arguments
     * `nssm start av-helper`
 

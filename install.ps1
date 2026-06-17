@@ -107,13 +107,13 @@ if ($go.ToUpper() -ne "Y") { exit }
 
 ##### 1 DOWNLOAD
 
-Confirm-Step "1. Download release"
+Confirm-Step "1. Download release to $tempZip"
 
 Invoke-WebRequest -Uri $ZipUrl -OutFile $tempZip
 
 ##### 2 EXTRACT
 
-Confirm-Step "2. Extract release"
+Confirm-Step "2. Extract release to $tempExtract"
 
 Expand-Archive -LiteralPath $tempZip -DestinationPath $tempExtract -Force
 
@@ -145,17 +145,21 @@ if (Test-Path $newConfig -and (Test-Path $existingConfig))
 
 ##### 4 COPY FILES
 
-Confirm-Step "4. Stop service then copy files to installation"
+Confirm-Step "4. Stop service then copy files to $InstallDir"
 
 nssm stop $ServiceName 2>$null
 Copy-Item "$tempExtract\*" $InstallDir -Recurse -Force
 
 ##### 5 NPM INSTALL
 
-Confirm-Step "5. Install Node dependencies"
+Confirm-Step "5. Remove and (re)Install Node dependencies in $InstallDir"
+
+if (Test-Path "$InstallDir\node_modules") {
+    Remove-Item "$InstallDir\node_modules" -Recurse -Force
+}
 
 Push-Location $InstallDir
-npm install
+npm ci
 Pop-Location
 
 ##### 6 NSSM SERVICE
