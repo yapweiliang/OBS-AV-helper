@@ -61,7 +61,7 @@ Write-Host "Prerequisites"
 Write-Host "- nodejs is installed"
 Write-Host "- nssm.exe is in the PATH or current folder"
 Write-Host ""
-Write-Host "for specific release, run"
+Write-Host "for specific release, e.g. v1.2.3, run"
 Write-Host "  .\$($MyInvocation.MyCommand.Name) -Version v1.2.3"
 Write-Host ""
 
