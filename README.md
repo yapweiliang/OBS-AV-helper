@@ -40,8 +40,9 @@ This is a node server that:
     * [NSSM](nssm.cc) (2.24-101-g897c7ad) is downloaded, and available in the PATH
 
 1. First time installation, on the PC that runs OBS
-    * download and run `install.ps1` from https://github.com/yapweiliang/OBS-AV-helper
-    * https://github.com/yapweiliang/OBS-AV-helper/blob/main/install.ps1
+    * download `install.js` and run `node install.js` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.js
+    * or, download and run `install.bat` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.bat which will do the above
+    * Tip: *right-click --> save link as...* to download
 
 1. Manual first time installation, on the PC that runs OBS
     * Download the entire folder structure from https://github.com/yapweiliang/OBS-AV-helper
@@ -60,7 +61,9 @@ This is a node server that:
 
 #### Updates
 
-* run `install.ps1`
+* run `node install.js`
+* then consider whether any new settings in `config.new.js` need to be placed in existing `config.js`
+* TODO - UI method
 
 #### Configuration
 
