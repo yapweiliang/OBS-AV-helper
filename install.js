@@ -35,7 +35,7 @@ function ask(question) {
 }
 
 async function step(question, abort, action) {
-    const ok = await ask(`${question} [Y/N${abort ? "=abort" : "=skip"}]`);
+    const ok = await ask(`\n${question} [Y/N${abort ? "=abort" : "=skip"}]`);
 
     if (ok.toLowerCase() === "y") {
         await action();
@@ -170,11 +170,10 @@ async function downloadFile(url, dest) {
         const incomingEnv = path.join(extractPath, ".env.example");
         const existingEnv = path.join(INSTALL_DIR, ".env");
 
-        if (!fs.existsSync(existingEnv)) {
-            fs.renameSync(incomingEnv, path.join(extractPath, ".env"));
-            console.log("Created .env file from .env.example")
-
-            const obsPassword = await ask("`Please enter the OBS WebSocket password.\n(You can find this in OBS Settings → WebSocket Server Settings.)\nOBS_PASSWORD=");
+        if (fs.existsSync(existingEnv)) {
+            console.log("Existing .env file left intact.")
+        } else {
+            const obsPassword = await ask("Please enter the OBS WebSocket password.\n(You can find this in OBS Settings → WebSocket Server Settings.)\nOBS_PASSWORD");
             let envFile = fs.readFileSync(incomingEnv, "utf8");
             envFile = envFile.replace(
                 /^SESSION_SECRET=.*$/m,
@@ -189,7 +188,8 @@ async function downloadFile(url, dest) {
                 `OBS_PASSWORD=${obsPassword}`
             );
             fs.writeFileSync(incomingEnv, envFile);
-            console.log("New .env file created")
+            fs.renameSync(incomingEnv, path.join(extractPath, ".env"));
+            console.log("New .env file created from .env.example")
             console.log(`\n${envFile}\n`);
         }
 
