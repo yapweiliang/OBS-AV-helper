@@ -4,6 +4,9 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const https = require("https");
+const crypto = require("crypto");
+const readline = require("readline");
+
 const { execSync } = require("child_process");
 const { pipeline } = require("stream/promises");
 
@@ -18,21 +21,40 @@ const INSTALL_DIR = path.join( process.env.USERPROFILE || os.homedir(), "OneDriv
 const version = process.argv[2] || "latest";
 
 // HELPER FUNCTIONS
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-function promptStepOrExit(question, autoExit = true) {
+function ask(question) {
     return new Promise(resolve => {
-        process.stdout.write(`\n${question} [Y/N]: `);
-        process.stdin.resume();
-        process.stdin.once("data", data => {
-            process.stdin.pause();
-            const answer = (data.toString().trim().toLowerCase() === "y");
-
-            if (autoExit && !answer) {
-                process.exit(0)
-            }
-            resolve(answer)
+        rl.question(question + ": ", answer => {
+            resolve(answer);
         });
     });
+}
+
+async function step(question, abort, action) {
+    const ok = await ask(`${question} [Y/N${abort ? "=abort" : "=skip"}]`);
+
+    if (ok.toLowerCase() === "y") {
+        await action();
+    } else {
+        if (abort) {
+        console.log("Aborted.");
+        process.exit(0);
+        } else {
+        console.log("Skipped.");
+        }
+    }
+}
+
+async function stepOrAbort(question, action) {
+    await step(question, true, action);
+}
+
+async function stepOrSkip(question, action) {
+    await step(question, false, action);
 }
 
 function run(cmd, options = {}) {
@@ -83,11 +105,8 @@ async function downloadFile(url, dest) {
     await pipeline(res.body, fs.createWriteStream(dest));
 }
 
-/**
- * ==============================
- * MAIN
- * ==============================
- */
+
+// =========================== MAIN ===========================
 (async () => {
 
     // FETCH RELEASE
@@ -131,60 +150,94 @@ async function downloadFile(url, dest) {
     console.log("Requested version:", version);
     console.log("Version to install:", actualVersion);
 
-    await promptStepOrExit("Proceed with installation (each step requires 'y' to continue, otherwise the install process will stop)");
+    await stepOrAbort("Proceed with installation (each step requires 'y' to continue)", async () => {/* do nothing */});
 
-    // DOWNLOAD & EXTRACT
-    await promptStepOrExit(`Download & extract ${zipUrl} to temp folder`);
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "av-helper-"));
-    const zipPath = path.join(tempRoot, "av-helper.zip");
-    const extractPath = path.join(tempRoot, "extract");
-    fs.mkdirSync(extractPath);
+    let extractPath = null;
+    let tempRoot = null;
 
-    await downloadFile(zipUrl, zipPath);
-    run( `powershell -Command "Expand-Archive -Force '${zipPath}' '${extractPath}'"` );
-    console.log(`Extracted to ${extractPath}`)
+    // DOWNLOAD & EXTRACT & INITIALISE CONFIG/ENV
+    await stepOrAbort(`Download & extract ${zipUrl} to temp folder`, async () => {
+        tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "av-helper-"));
+        const zipPath = path.join(tempRoot, "av-helper.zip");
+        extractPath = path.join(tempRoot, "extract");
+        fs.mkdirSync(extractPath);
 
-    // BACKUP CONFIG
-    const incomingConfig = path.join(extractPath, "config", "config.js");
-    const existingConfig = path.join(INSTALL_DIR, "config", "config.js");
+        await downloadFile(zipUrl, zipPath);
+        run(`powershell -Command "Expand-Archive -Force '${zipPath}' '${extractPath}'"`);
+        console.log(`Extracted to ${extractPath}`)
 
-    if (fs.existsSync(existingConfig)) {
-        fs.renameSync(incomingConfig, path.join(extractPath, "config", "config.new.js"));
-        console.log("Incoming config.js renamed as config.new.js so that existing config.js is not touched");
+        // ENV management
+        const incomingEnv = path.join(extractPath, ".env.example");
+        const existingEnv = path.join(INSTALL_DIR, ".env");
 
-        if (await promptStepOrExit("Backup existing config ('N' will continue without backing up)", false)) {
-            if (fs.existsSync(existingConfig)) {
-                const ts = new Date().toISOString().replace(/[-:T.]/g, "").slice(0, 14);
-                const backup = path.join(INSTALL_DIR, "config", `config.previous.${ts}.js`);
-                fs.copyFileSync(existingConfig, backup);
-                console.log("Backed up config:", backup);
-            }
-        };
-    }
+        if (!fs.existsSync(existingEnv)) {
+            fs.renameSync(incomingEnv, path.join(extractPath, ".env.example", ".env"));
+            console.log("Created .env file from .env.example")
+
+            const obsPassword = await ask("`Please enter the OBS WebSocket password.\n(You can find this in OBS Settings → WebSocket Server Settings.)\nOBS_PASSWORD=");
+            let envFile = fs.readFileSync(incomingEnv, "utf8");
+            envFile = envFile.replace(
+                /^SESSION_SECRET=.*$/m,
+                `SESSION_SECRET=${crypto.randomBytes(32).toString("hex")}`
+            );
+            envFile = envFile.replace(
+                /^AUTH_SECRET=.*$/m,
+                `AUTH_SECRET=${crypto.randomBytes(32).toString("hex")}`
+            );
+            envFile = envFile.replace(
+                /^OBS_PASSWORD=.*$/m,
+                `OBS_PASSWORD=${obsPassword}`
+            );
+            fs.writeFileSync(incomingEnv, envFile);
+            console.log("New .env file created")
+            console.log(`\n${envFile}\n`);
+        }
+
+        // CONFIG management
+        const incomingConfig = path.join(extractPath, "config", "config.js");
+        const existingConfig = path.join(INSTALL_DIR, "config", "config.js");
+
+        if (fs.existsSync(existingConfig)) {
+            fs.renameSync(incomingConfig, path.join(extractPath, "config", "config.new.js"));
+            console.log("Incoming config.js renamed as config.new.js so that existing config.js is not touched");
+
+            await stepOrSkip("Backup existing config", async () => {
+                if (fs.existsSync(existingConfig)) {
+                    const ts = new Date().toISOString().replace(/[-:T.]/g, "").slice(0, 14);
+                    const backup = path.join(INSTALL_DIR, "config", `config.previous.${ts}.js`);
+                    fs.copyFileSync(existingConfig, backup);
+                    console.log("Backed up config:", backup);
+                }
+            })
+        }
+    });
 
     // COPY FILES
-    await promptStepOrExit(`Copy to install directory ${INSTALL_DIR}`);
-    fs.mkdirSync(INSTALL_DIR, { recursive: true });
-    fs.cpSync(extractPath, INSTALL_DIR, { recursive: true });
+    await stepOrAbort(`Copy to install directory ${INSTALL_DIR}`, async () => {
+        fs.mkdirSync(INSTALL_DIR, { recursive: true });
+        fs.cpSync(extractPath, INSTALL_DIR, { recursive: true });
+    });
 
     // NPM INSTALL
-    await promptStepOrExit(`Install node dependancies\n(Please don't worry about the vulnerability warnings)\nRun "npm ci" in ${INSTALL_DIR}`);
-    run("npm ci", { cwd: INSTALL_DIR });
+    await stepOrAbort(`Install node dependancies\n(Please don't worry about the vulnerability warnings)\nRun "npm ci" in ${INSTALL_DIR}`, async () => {
+        run("npm ci", { cwd: INSTALL_DIR });
+    });
 
     // NSSM
     const nodePath = "C:\\Program Files\\nodejs\\node.exe";
     const serverPath = path.join(INSTALL_DIR, "server.js");
 
-    await promptStepOrExit(`Configure Windows service\n1. nssm stop ${SERVICE_NAME}\n2. nssm remove ${SERVICE_NAME}\n3. nssm install ${SERVICE_NAME} "${nodePath}" "${serverPath}"\nProceed?`);
-
-    try { run(`nssm stop ${SERVICE_NAME}`); } catch {} // TODO consider whether to stop service before copying files
-    try { run(`nssm remove ${SERVICE_NAME} confirm`); } catch {}
-    try { run(`nssm install ${SERVICE_NAME} "${nodePath}" "${serverPath}"`); } catch {}
-    try { run(`nssm set ${SERVICE_NAME} AppDirectory "${INSTALL_DIR}"`); } catch {}
+    await stepOrSkip(`Configure Windows service\n1. nssm stop ...\n2. nssm remove ...\n3. nssm install ...\n4. nssm set ...\n${SERVICE_NAME} "${nodePath}" "${serverPath}"\nProceed?`, async () => {
+        try { run(`nssm stop ${SERVICE_NAME}`); } catch { } // TODO consider whether to stop service before copying files
+        try { run(`nssm remove ${SERVICE_NAME} confirm`); } catch { }
+        try { run(`nssm install ${SERVICE_NAME} "${nodePath}" "${serverPath}"`); } catch { }
+        try { run(`nssm set ${SERVICE_NAME} AppDirectory "${INSTALL_DIR}"`); } catch { }
+    });
 
     // START SERVICE
-    await promptStepOrExit(`Start service (nssm start ${SERVICE_NAME})`);
-    try { run(`nssm start ${SERVICE_NAME}`); } catch {}
+    await stepOrSkip(`Start service (nssm start ${SERVICE_NAME})`, async () => {
+        try { run(`nssm start ${SERVICE_NAME}`); } catch {}
+    });
 
     // SUMMARISE
     console.log("\n==============================================");
@@ -194,7 +247,9 @@ async function downloadFile(url, dest) {
     console.log("==============================================\n");
 
     // CLEANUP
-    await promptStepOrExit(`Clean up temp folder ${tempRoot}`);
-    fs.rmSync(tempRoot, { recursive: true, force: true });
+    await stepOrSkip(`Clean up temp folder ${tempRoot}`, async () => {
+        fs.rmSync(tempRoot, { recursive: true, force: true });
+    });
 
+    rl.close();
 })();
