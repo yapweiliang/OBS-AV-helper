@@ -419,7 +419,7 @@ obs.on("obsConnectSuccess", async state =>  {
 })
 
 obs.on("setCameraTallyColor", state => {
-    camera.setCameraTallyColor(state) // this will also broadcast to clients
+    await camera.setCameraTallyColor(state) // this will also broadcast to clients
 });
 
 obs.on("updateOBSLiveStatus", (recordState, streamState) => {
