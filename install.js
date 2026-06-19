@@ -171,7 +171,7 @@ async function downloadFile(url, dest) {
         const existingEnv = path.join(INSTALL_DIR, ".env");
 
         if (!fs.existsSync(existingEnv)) {
-            fs.renameSync(incomingEnv, path.join(extractPath, ".env.example", ".env"));
+            fs.renameSync(incomingEnv, path.join(extractPath, ".env"));
             console.log("Created .env file from .env.example")
 
             const obsPassword = await ask("`Please enter the OBS WebSocket password.\n(You can find this in OBS Settings → WebSocket Server Settings.)\nOBS_PASSWORD=");

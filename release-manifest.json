@@ -11,6 +11,8 @@
     "install.js",
     "install.bat",
 
+    ".env.example",
+
     "config/**",
     "frontend/**",
     "lib/**",
