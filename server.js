@@ -418,7 +418,7 @@ obs.on("obsConnectSuccess", async state =>  {
     }
 })
 
-obs.on("setCameraTallyColor", state => {
+obs.on("setCameraTallyColor", async state => {
     await camera.setCameraTallyColor(state) // this will also broadcast to clients
 });
 
