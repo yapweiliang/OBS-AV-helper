@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/app/style-root.css">
+    <link rel="stylesheet" href="/app/style.css">
+    <link rel="stylesheet" href="/app/style-status-text.css">
+    <link rel="stylesheet" href="/app/style-presets-table.css">
+    <script type="module" src="/app/app.js" defer></script>
+
+    <link type="text/css" rel="stylesheet" href="/assets/easydlg.css" />
+    <script src="/assets/easydlg.min.js" charset="utf-8"></script>
+
+    <title>AV helper on OBS</title>
+</head>
+
+<body class="obs-dock">
+    <!-- hidden elements ----------------------------------------------------->
+    <!--
+        There may of course be better ways to do this.
+
+        This (obs-dock.html) is a trimmed down version of index.html.
+        index.html should be the main source of design 'truth' and obs-dock.html
+        should always be downstream.
+
+        Take note of class="obs-dock" in <body>
+
+        These elements are hidden rather than deleted,
+        as app.js interacts with them.
+    -->
+    <div>
+        <div class="status-tally-area hidden" id="tallyTextArea">
+            <span id="tallyText">unknown</span>
+        </div>
+        <button class="button--icon hidden" id="helpButton" title="show help">
+            ?
+        </button>
+        <button class="button--icon hidden" id="fullScreenButton" title="full screen">
+            ⛶
+        </button>
+        <div id="x32Buttons" class="hidden"></div>
+        <div id="x32Indicators" class="hidden"></div>
+        <div id="obsSceneButtonsContainer" class="hidden"></div>
+        <button id="btnStartStopStream" title="Start or Stop OBS live stream" class="hold-button button--danger hidden"
+            data-hold-ms="2000" data-action="toggleStreamStartStop">
+            <span class="label">Start/Stop stream...</span>
+        </button>
+        <div class="hidden">OBS scene: <span id="obsCurrentScene"></span></div>
+    </div>
+
+    <!-- displayed elements -------------------------------------------------->
+    <table class="status-area">
+       <tbody>
+            <col/>
+            <col class="status-connection-width"/>
+
+            <tr>
+                <td class="status-text-area" id="statusTextArea">
+                    <span id="statusText">Hello!</span>
+                </td>
+                <td class="" style="text-align: end;">
+                    <div>Node<span id="serverStatus" >⚪</span></div>
+                    <div>X32<span id="x32Status">⚪</span></div>
+                    <div>OBS<span id="obsStatus">⚪</span></div>
+                    <button class="button--icon" id="codeButton" title="show login code">
+                        🔑
+                    </button>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+    <!------------------------------------------------------------------------>
+    <div>
+        <!--------------------------------->
+        <div>
+            <button id="btnOverlayParents"
+                title="Show overlay asking parents to collect children prompty AFTER service"
+                class="hold-button button--prompt"
+                data-hold-ms="500"
+                data-action="toggleParentsOverlay">
+                <span class="label">...</Span>
+            </button>
+            <button id="btnOverlayCustom"
+                title="Show overlay with customised text"
+                class="hold-button button--prompt"
+                data-hold-ms=0
+                data-action="toggleCustomOverlay">
+                <span class="label">...</Span>
+            </button>
+            &nbsp; <!--SPACER-->
+
+        </div>
+        <!--------------------------------->
+        <div>
+            <table class="buttons-table">
+                <tr>
+                    <td class="row-of-buttons-control">
+                        Focus Zone:
+                        <select class="focus-zone-select"
+                            id="selFocusZoneSelect"
+                            title="Focus Zone">
+                        </select>
+                        <button class="button--icon"
+                            id="infoButton"
+                            title="request camera settings">
+                            ℹ
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button id="btnToggleAutoFocus"
+                            title="Toggle between Auto Focus and AF Locked"
+                            class="hold-button button--big"
+                            data-action="toggleAutoFocus">
+                            Auto<br>Focus
+                        </button>
+                    </td>
+                    <td>
+                        <button id="btnOnePushFocus"
+                            title="Focus then lock in"
+                            class="hold-button button--big"
+                            data-action="onePushFocus">
+                            OnePush<br>Focus
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button id="btnOnePushWhiteBalance"
+                            title="Set white balance then lock in"
+                            class="hold-button"
+                            data-action="onePushWhiteBalance">
+                            OnePush White Balance
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <!--------------------------------->
+        <div id="presetTableInlineContainer"></div>
+        <!--------------------------------->
+        <div>
+            &nbsp; <!--SPACER-->
+            <button id="btnResetCamera"
+                title="This will re-set the camera settings"
+                class="hold-button button--prompt"
+                data-hold-ms="1500"
+                data-action="resetCamera">
+                Reset Camera...
+            </button>
+            <button id="btnRestartCamera"
+                title="This will restart the camera (takes about a minute)"
+                class="hold-button button--prompt"
+                data-hold-ms="1500"
+                data-action="restartCamera">
+                Restart Camera...
+            </button>
+        </div>
+    </div>
+
+    <!------------------------------------------------------------------------>
+    <span id="developmentStatus"></span><span id="versionString"></span>
+
+    <!------------------------------------------------------------------------>
+    <div id="modalRoot"></div>
+    <!------------------------------------------------------------------------>
+</body>
+</html>

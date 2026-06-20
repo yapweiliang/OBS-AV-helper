@@ -2,6 +2,10 @@
     background-color: red;
 }
 
+.hidden {
+    display: none;
+}
+
 /* ---------------- */
 
 .big-panel {
@@ -181,10 +185,6 @@ body {
 
     /* tweak for OBS dock */
     margin: 0;
-    /*
-    overflow-x: hidden;
-    overflow-y: hidden;
-    */
 
     /* touchscreen */
     touch-action: manipulation; /* none;*/
@@ -194,4 +194,15 @@ body {
     -webkit-user-select: none;
     -webkit-touch-callout: none;    /* safari */
     -webkit-tap-highlight-color: transparent;
+}
+
+.obs-dock {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    padding: 4px;
+}
+
+.obs-dock button {
+    font-size: small;
+    padding: 6px;
 }

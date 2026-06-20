@@ -100,6 +100,7 @@ function requireAuth(req, res, next) {
 
 const LOGIN_PAGE = path.join(__dirname, "frontend", "login", "login.html");
 const INDEX_PAGE = path.join(__dirname, "frontend", "app", "index.html");
+const DOCK_PAGE  = path.join(__dirname, "frontend", "app", "obs-dock.html");
 
 // global middleware
 const sessionParser = session({
@@ -117,10 +118,12 @@ app.use(express.json());
 // root redirect
 app.get("/", requireAuth, (req, res) => { res.sendFile(INDEX_PAGE); });
 
+app.get("/obs-dock", requireAuth, (req, res) => { res.sendFile(DOCK_PAGE); });
+
 // public resources
-app.use( "/assets", express.static(path.join(__dirname, "frontend/assets")) );
-app.use( "/login",  express.static(path.join(__dirname, "frontend/login")) );
-app.use( "/help",   express.static(path.join(__dirname, "frontend/help")) );
+app.use( "/assets", express.static(path.join(__dirname, "frontend", "assets")) );
+app.use( "/login",  express.static(path.join(__dirname, "frontend", "login")) );
+app.use( "/help",   express.static(path.join(__dirname, "frontend", "help")) );
 
 // public API (login/logout)
 app.get("/login", (req, res) => { res.sendFile(LOGIN_PAGE); });

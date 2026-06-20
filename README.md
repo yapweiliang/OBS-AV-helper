@@ -63,7 +63,7 @@ This is a node server that:
 
 1. test the installation by opening http://localhost:3000
 
-1. TODO instruction for OBS browser dock
+1. Use http://localhost:3000/obs-dock as OBS Custom Browser Dock
 
 #### Updates
 

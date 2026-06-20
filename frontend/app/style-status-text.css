@@ -1,7 +1,6 @@
 .status-area {
     table-layout: fixed;
 
-    height: 5ch;
     overflow-y: auto;
 
     width: 100%;
@@ -14,6 +13,10 @@
 
 .status-area td {
     border: none;
+}
+
+.status-area tr {
+    height: 7ch;
 }
 
 .status-connection-width {
