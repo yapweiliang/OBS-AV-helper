@@ -5,12 +5,13 @@ const config = {};
 
 config.server = {
     LISTEN_PORT: 3000,
+    SERVER_ALIAS: isDev ? `http://localhost` : `http://pc-obs.av`
 }
 
 config.obs = {  // this is passed to the obs.js module on initialisation
 
     // `ws://${host}`
-    host: isDev ? "localhost" : "192.168.32.100",
+    host: isDev ? "localhost" : "localhost",
     port: 4455,
     password: process.env.OBS_PASSWORD,
 
@@ -62,7 +63,8 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
     isDevelopment: isDev,
     versionString: `${name} v${version}`,
 
-    urlToShow: `http://pc-obs.av:${config.server.LISTEN_PORT}`,
+    urlToShow:   `${config.server.SERVER_ALIAS}:${config.server.LISTEN_PORT}`,
+    urlHelpPage: `${config.server.SERVER_ALIAS}:${config.server.LISTEN_PORT}/help/help.html`,
 
     // X32 actions
     buttons: [

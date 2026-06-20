@@ -1062,7 +1062,7 @@ async function runHoldAction(actionName, button) {
                 showDailyCode();
                 break;
             case "showHelp":
-                console.log("PLACEHOLDER for actionName:", actionName);
+                window.open(CONFIG.ui.urlHelpPage, '_blank').focus();
                 break;
             default:
                 // report unknown action
