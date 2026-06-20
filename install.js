@@ -9,26 +9,36 @@ const readline = require("readline");
 
 const { execSync } = require("child_process");
 const { pipeline } = require("stream/promises");
+const { settings } = require("cluster");
+const { start } = require("repl");
+
+function isAdmin() {
+    try {
+        execSync("net session", { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 // CONFIG
 const USER = "yapweiliang";
 const REPO = "OBS-AV-helper";
 const SERVICE_NAME = "av-helper";
 
-const INSTALL_DIR = path.join( process.env.USERPROFILE || os.homedir(), "OneDrive", "AV", "av-helper" );
+const INSTALL_DIR = path.join( process.env.USERPROFILE || os.homedir(), "OneDrive", "av-shared", "OBS AV Helper" );
 
 // ARGUMENTS
 const version = process.argv[2] || "latest";
 
 // HELPER FUNCTIONS
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+let isProbablyFresh = false;
 
 function ask(question) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise(resolve => {
         rl.question(question + ": ", answer => {
+            rl.close();
             resolve(answer);
         });
     });
@@ -143,8 +153,15 @@ async function downloadFile(url, dest) {
     console.log("\n==============================================");
     console.log("OBS AV HELPER INSTALLER/UPDATER");
     console.log("==============================================");
-    console.log("Requires nssm.exe to be in the PATH");
-    console.log("To install specific version e.g. v1.2.3 run as\n>node install.js v1.2.3");
+    if (isAdmin()) {
+        console.log("*** Running as administrator ***")
+    } else {
+        console.log("*** WARNING: not running as administrator ****")
+    }
+    console.log("----------------------------------------------");
+    console.log("To install specific version e.g. v1.2.3 run as\n> node install.js v1.2.3");
+    console.log("\nRequirements");
+    console.log(" - nssm.exe is in the PATH\n - This installer is run as administrator");
     console.log("==============================================");
     console.log("Install directory:", INSTALL_DIR);
     console.log("Requested version:", version);
@@ -152,11 +169,13 @@ async function downloadFile(url, dest) {
 
     await stepOrAbort("Proceed with installation (each step requires 'y' to continue)", async () => {/* do nothing */});
 
+    const logPath = path.join(INSTALL_DIR, "logs");
+    const logFile = path.join(logPath, "av-helper.log");
     let extractPath = null;
     let tempRoot = null;
 
     // DOWNLOAD & EXTRACT & INITIALISE CONFIG/ENV
-    await stepOrAbort(`Download & extract ${zipUrl} to temp folder`, async () => {
+    await stepOrAbort(`Download & extract the following to temp folder\n${zipUrl} `, async () => {
         tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "av-helper-"));
         const zipPath = path.join(tempRoot, "av-helper.zip");
         extractPath = path.join(tempRoot, "extract");
@@ -173,6 +192,7 @@ async function downloadFile(url, dest) {
         if (fs.existsSync(existingEnv)) {
             console.log("Existing .env file left intact.")
         } else {
+            isProbablyFresh = true;
             const obsPassword = await ask("Please enter the OBS WebSocket password.\n(You can find this in OBS Settings → WebSocket Server Settings.)\nOBS_PASSWORD");
             let envFile = fs.readFileSync(incomingEnv, "utf8");
             envFile = envFile.replace(
@@ -212,10 +232,22 @@ async function downloadFile(url, dest) {
         }
     });
 
-    // COPY FILES
+    // STOP SERVICE
+    // - npm ci might fail if service is running
+    // - ok to stop here, as our server.js does not keep any files open
+    const nssm_stop = `nssm stop ${SERVICE_NAME}`
+    if (isProbablyFresh) {
+        console.log("The server must be stopped before update")
+    }
+    await stepOrAbort(`Stop ${SERVICE_NAME} service${isAdmin() ? "" : " (requires administrator priviledge)"}`, async () => {
+        try { await run(nssm_stop); } catch { }
+    })
+
+    // COPY FILES & CREATE LOGS FOLDER
     await stepOrAbort(`Copy to install directory ${INSTALL_DIR}`, async () => {
         fs.mkdirSync(INSTALL_DIR, { recursive: true });
         fs.cpSync(extractPath, INSTALL_DIR, { recursive: true });
+        fs.mkdirSync(logPath, { recursive: true }); // NSSM needs folder to exist
     });
 
     // NPM INSTALL
@@ -225,31 +257,69 @@ async function downloadFile(url, dest) {
 
     // NSSM
     const nodePath = "C:\\Program Files\\nodejs\\node.exe";
-    const serverPath = path.join(INSTALL_DIR, "server.js");
+    const serverPath = path.join("server.js"); // NSSM doesn't like spaces in the arguments
 
-    await stepOrSkip(`Configure Windows service\n1. nssm stop ...\n2. nssm remove ...\n3. nssm install ...\n4. nssm set ...\n${SERVICE_NAME} "${nodePath}" "${serverPath}"\nProceed?`, async () => {
-        try { run(`nssm stop ${SERVICE_NAME}`); } catch { } // TODO consider whether to stop service before copying files
-        try { run(`nssm remove ${SERVICE_NAME} confirm`); } catch { }
-        try { run(`nssm install ${SERVICE_NAME} "${nodePath}" "${serverPath}"`); } catch { }
-        try { run(`nssm set ${SERVICE_NAME} AppDirectory "${INSTALL_DIR}"`); } catch { }
-    });
+    const nssm_install = `nssm install ${SERVICE_NAME} "${nodePath}" "${serverPath}"`;
 
-    // START SERVICE
-    await stepOrSkip(`Start service (nssm start ${SERVICE_NAME})`, async () => {
-        try { run(`nssm start ${SERVICE_NAME}`); } catch {}
-    });
+    const nssm_settings_set = []
+    nssm_settings_set[0] = `nssm set ${SERVICE_NAME} AppDirectory "${INSTALL_DIR}"`;
+    nssm_settings_set[1] = `nssm set ${SERVICE_NAME} AppStdout "${logFile}"`;
+    nssm_settings_set[2] = `nssm set ${SERVICE_NAME} AppStderr "${logFile}"`;
+    nssm_settings_set[3] = `nssm set ${SERVICE_NAME} AppRotateFiles 1`;
+
+    const nssm_start = `nssm start ${SERVICE_NAME}`
+
+    const nssm_remove_set = []
+    nssm_remove_set[0] = `nssm stop ${SERVICE_NAME}`;
+    nssm_remove_set[1] = `nssm remove ${SERVICE_NAME} confirm`;
+
+    console.log("The following need to be run with administrator priviledge:")
+    console.log("\nFor fresh (new) installation:")
+    console.log(">", nssm_install);
+    nssm_settings_set.forEach( element => {console.log(">",element)});
+
+    console.log("\nFor clean upgrade:")
+    nssm_remove_set.forEach( element => {console.log(">",element)});
+    console.log(">", nssm_install);
+    nssm_settings_set.forEach( element => {console.log(">",element)});
+
+    console.log("\nFor most upgrades:")
+    console.log(">", nssm_start, "(restart, as service will need to be stopped before upgrade)");
+
+    if (isAdmin()) {
+        await stepOrSkip("proceed with nssm setup", async () => {
+            if (isProbablyFresh) {
+            } else {
+                for (const element of nssm_remove_set) {
+                    try { await run(element); } catch { }
+                }
+            }
+
+            try { await run(nssm_install); } catch { }
+
+            for (const element of nssm_settings_set) {
+                try { await run(element); } catch { }
+            }
+
+            await stepOrSkip(nssm_start, async () => {
+                try { await run(nssm_start); } catch { }
+            })
+        })
+    } else {
+        console.log("Please re-run this with elevated priviledges or do the above yourself");
+    }
 
     // SUMMARISE
     console.log("\n==============================================");
     console.log("INSTALL COMPLETE");
     console.log("Version:", actualVersion);
     console.log("Location:", INSTALL_DIR);
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    console.log("Removed temp folder:", tempRoot);
     console.log("==============================================\n");
 
-    // CLEANUP
-    await stepOrSkip(`Clean up temp folder ${tempRoot}`, async () => {
-        fs.rmSync(tempRoot, { recursive: true, force: true });
-    });
+    await stepOrSkip("Open app (http://localhost:3000) in browser (assuming port was not changed from default of 3000)", async () => {
+        try { await run("start http://localhost:3000")} catch { }
+    })
 
-    rl.close();
 })();
