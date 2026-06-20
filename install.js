@@ -162,6 +162,8 @@ async function downloadFile(url, dest) {
     console.log("To install specific version e.g. v1.2.3 run as\n> node install.js v1.2.3");
     console.log("\nRequirements");
     console.log(" - nssm.exe is in the PATH\n - This installer is run as administrator");
+    console.log("----------------------------------------------");
+    console.log("For fresh installation, OBS password is needed")
     console.log("==============================================");
     console.log("Install directory:", INSTALL_DIR);
     console.log("Requested version:", version);
@@ -306,7 +308,7 @@ async function downloadFile(url, dest) {
             })
         })
     } else {
-        console.log("Please re-run this with elevated priviledges or do the above yourself");
+        console.log("Please re-run this installer with elevated priviledges or do the above yourself");
     }
 
     // SUMMARISE
@@ -318,7 +320,7 @@ async function downloadFile(url, dest) {
     console.log("Removed temp folder:", tempRoot);
     console.log("==============================================\n");
 
-    await stepOrSkip("Open app (http://localhost:3000) in browser (assuming port was not changed from default of 3000)", async () => {
+    await stepOrSkip("Test the installation.  Open app (http://localhost:3000) in browser (assuming port was not changed from default of 3000)", async () => {
         try { await run("start http://localhost:3000")} catch { }
     })
 

@@ -40,7 +40,7 @@ This is a node server that:
     * [NSSM](nssm.cc) (2.24-101-g897c7ad) is downloaded, and available in the PATH
 
 1. First time installation, on the PC that runs OBS
-    * download `install.js` and run `node install.js` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.js
+    * download `install.js` and run `node install.js` (with administrator priviledge) from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.js
     * or, download and run `install.bat` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.bat which will do the above
     * Tip: *right-click --> save link as...* to download
 
@@ -50,25 +50,38 @@ This is a node server that:
 
     * `cd` to that folder
     * `npm ci`
+    * Tip: *nssm needs to run with administrator priviledge*
     * `nssm install av-helper`
+    * `nssm edit av-helper`
         * path: `C:\Program Files\nodejs\node.exe`
-        * arguments: `....\OneDrive\av-shared\av-helper\server.js`
-        * startup directory: `....\OneDrive\av-shared\av-helper`
-        * TODO other arguments
+        * startup directory: `....\OneDrive\av-shared\OBS-AV-helper\\OneDrive\av-shared\av-helper`
+        * arguments: `server.js`
+        * stdout: `...OneDrive\av-shared\OBS AV Helper\logs\av-helper.log`
+        * stderr:`...OneDrive\av-shared\OBS AV Helper\logs\av-helper.log`
+        * file rotation: [y] rotate files
     * `nssm start av-helper`
+
+1. test the installation by opening http://localhost:3000
 
 1. TODO instruction for OBS browser dock
 
 #### Updates
 
-* run `node install.js`
-* then consider whether any new settings in `config.new.js` need to be placed in existing `config.js`
-* TODO - UI method
+1. run `node install.js` as administrator (or run `install.bat`)
+
+1. consider whether any new settings in `config.new.js` need to be placed in existing `config.js`
+
+1. test the installation
+
+1. if the process fails, try again; it is possible that the server was not stopped before the update process
 
 #### Configuration
 
 * the `config.js` file should be self-explanatory
 * pay particular attention to the spellings in the OBS scenes, etc
+* server must be restarted if any changes are made.
+    * `net stop av-helper` / `nssm stop av-helper` then
+    * `net start av-helper` / `nssm start av-helper`
 
 
 
