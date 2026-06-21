@@ -720,9 +720,9 @@ async function shutdown(signal) {
     console.log(debugPrefix(), `${signal} received. ------------------------------\n`);
 
     // stuff we want to do on [windows] shutdown
-    e = await camera.shutdownCamera();
+    e = await camera.shutdownCamera(); // obs exit will also try to shutdown camera
     console.log(debugPrefix(), `Camera shutdown ${(e) ? "OK" : "failed"}`);
-    resetOverlayButtons();
+    resetOverlayButtons(); // this might be irrelevant
 
     // other cleanup
     obs.disconnect();

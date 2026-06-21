@@ -55,7 +55,12 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
         muteBand:       { type: "toggle",   address: "/config/mute/6",  invert: false },
         muteAll:        { type: "toggle",   address: "/config/mute/1",  invert: false },
 
-        mainVolume:     { type: "fader",    address: "/main/st/mix/fader" }
+        muteVocalReverb:{ type: "toggle",   address: "/dca/8/on",       invert: true },
+        muteAmbient:    { type: "toggle",   address: "/ch/23/mix/on",   invert: true },
+
+        volumeDCAVocal: { type: "fader",    address: "/dca/1/fader"},
+
+        volumeMain:     { type: "fader",    address: "/main/st/mix/fader" }
     }
 }
 
@@ -68,9 +73,9 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
 
     // X32 actions
     buttons: [
-        { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Speaking" },
-        { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Speak Louder" },
-        { id: "btnBandSinging",     signalId: "bandSinging",    label: "𝄞🎜 Band Singing 🎹🎸" },
+        { id: "btnBandSpeaking",    signalId: "bandSpeaking",   label: "Band Talking" },
+        { id: "btnBandSpeakLouder", signalId: "bandSpeakLouder", label: "Band Talk Louder" },
+        { id: "btnBandSinging",     signalId: "bandSinging",    label: "Band Singing 𝄞🎹" },
         { id: "btnMuteBand",        signalId: "muteBand",       label: "Mute Band" },
         { id: "" },
         { id: "btnLecternOn",       signalId: "lecternOn",      label: "Lectern On" },
@@ -86,15 +91,15 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
     // not actions
     indicators: [
         { id: "" },
-        { id: "indSpeechMuted", signalId: "muteSpeech",     label: "Speech Muted" },
-        { id: "indBandMuted",   signalId: "muteBand",       label: "Band Muted" },
-        { id: "indAllMuted",    signalId: "muteAll",        label: "All Mics Muted" },
+        { id: "indVocalReverbMuted",    signalId: "muteVocalReverb",    label: "Vocals Reverb Muted" },
+        { id: "indAmbientMuted",        signalId: "muteAmbient",        label: "Ambient Mic Muted" },
         { id: "" }
     ],
 
     // not actions (not intended)
     faders: [
-        { id: "fdrMain",        signalId: "mainVolume",     label: "Main should be 0 dB →"}
+        { id: "fdrMain",        signalId: "volumeMain",     label: "Main should be 0 dB →" },
+        { id: "fdrDCAVocal",    signalId: "volumeDCAVocal", label: "Vocal group" }
     ],
 
     cameraPresets: [
@@ -110,7 +115,7 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
         { id: "btnOBS_01", sceneName: "2 BAND: lead",             label: "BAND: lead" },
         { id: "btnOBS_02", sceneName: "3 BAND: right + words",    label: "BAND: right + words" },
         { id: "btnOBS_03", sceneName: "1 BAND: full + words",     label: "BAND: full + words" },
-        { id: "btnOBS_04", sceneName: "4 STAGE",                  label: "STAGE (to rename)" },
+        { id: "btnOBS_04", sceneName: "4 STAGE",                  label: "STAGE" },
         { id: "" },
         { id: "btnOBS_05", sceneName: "5 LECTERN",                label: "LECTERN" },
         { id: "btnOBS_06", sceneName: "6 Lectern as inset",       label: "Lectern as inset" },
