@@ -40,16 +40,11 @@ This is a node server that:
     * [NSSM](nssm.cc) (2.24-101-g897c7ad) is downloaded, and available in the PATH
 
 1. First time installation, on the PC that runs OBS
-    * download `install.js` and run `node install.js` (with administrator priviledge) from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.js
-    * or, download and run `install.bat` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.bat which will do the above
+    * download `install.js` from https://raw.githubusercontent.com/yapweiliang/OBS-AV-helper/main/install.js
     * Tip: *right-click --> save link as...* to download
+    * open `Command Prompt` shell *with administrator priviledge* and run `node install.js`
 
-1. Manual first time installation, on the PC that runs OBS
-    * Download the entire folder structure from https://github.com/yapweiliang/OBS-AV-helper
-    * save to `....\OneDrive\av-shared\OBS-AV-helper\`
-
-    * `cd` to that folder
-    * `npm ci`
+1. Manual configuration of windows service with *nssm* (in case the above needs to be re-done)
     * Tip: *nssm needs to run with administrator priviledge*
     * `nssm install av-helper`
     * `nssm edit av-helper`
@@ -58,16 +53,16 @@ This is a node server that:
         * arguments: `server.js`
         * stdout: `...OneDrive\av-shared\OBS AV Helper\logs\av-helper.log`
         * stderr:`...OneDrive\av-shared\OBS AV Helper\logs\av-helper.log`
-        * file rotation: [y] rotate files
+        * file rotation: Rotate files [`yes`]
     * `nssm start av-helper`
 
 1. test the installation by opening http://localhost:3000
 
 1. Use http://localhost:3000/obs-dock as OBS Custom Browser Dock
 
-#### Updates
+#### Updates or Reinstallation
 
-1. run `node install.js` as administrator (or run `install.bat`)
+1. run `node install.js` as administrator
 
 1. consider whether any new settings in `config.new.js` need to be placed in existing `config.js`
 
