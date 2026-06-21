@@ -442,10 +442,10 @@ obs.on("overlaySceneSelected", () => {
 });
 
 obs.on("exitStarted", async () => {
-    await camera.setCameraTallyColor('blue');
+    // trying to hide overlays here does not work, need to allow overlayCache method to hide it on start-up
+
     const e = await camera.shutdownCamera();
     console.log(debugPrefix(), `Camera shutdown when OBS exitStarted ${(e) ? "OK" : "failed"}`);
-    // server shutdown will try camera.shutdownCamera again
 });
 
 function highlightCameraPreset(preset_id) {
