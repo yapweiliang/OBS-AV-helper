@@ -225,10 +225,9 @@ async function onConnection(ws, req) {
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
     ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
 
-    // send camera state
-    ws.send(JSON.stringify({ type: "updateClientTallyLightIndicator", color: await camera.getCameraTallyColor() }));
+    // send camera state (this will READ from camera and broadcast to ALL clients)
+    await refreshCameraAllStates();
     ws.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: activePreset }));
-    // TODO send also other focus states
 
     // send obs state
     ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
@@ -320,9 +319,10 @@ async function wsMessageHandler(data, ws) {
             } else {
                 e = await camera.setFocusZone(msg.id); // returns focusZoneId or null; does not block id=6
                 refreshCameraFocusZone(e);
-                // broadcastToBrowsers({ type: "updateClientFocusState", focus_zone: e });
-                // TODO statusText update, e==null = failure
             }
+            break;
+        case "reloadCameraStates":
+            await refreshCameraAllStates();
             break;
         case "resetCamera":
             // TODO can we disable camera buttons temporarily?
@@ -617,12 +617,6 @@ camera.on("updateClientTallyLightIndicator", color => {
     broadcastToAllClients({ type: "updateClientTallyLightIndicator", color: color});
 });
 
-camera.on("updateClientFocusState", (mode, locked, zone) => {
-    // TODO should this be called from camera.setFocusMode/setFocusZone
-    // or from server.js (upon requesting change in Focus settings)
-    broadcastToAllClients({ type: "updateClientFocusState", focus_mode: mode, focus_locked: locked, focus_zone: zone});
-});
-
 // ....................................................
 // camera helper functions
 // ....................................................
@@ -632,7 +626,7 @@ function sleep(ms) {
 }
 
 async function refreshCameraFocusZone(res) {
-    res ??= await camera.getFocusZone()
+    res ??= await camera.getFocusZone() // expect null if failure
     broadcastToAllClients({ type: "updateClientFocusState", focus_zone: res });
     return res;
 }
@@ -644,7 +638,7 @@ async function refreshCameraFocusMode() {
 }
 
 async function refreshCameraTallyColor() {
-    const res = await camera.getCameraTallyColor();
+    const res = await camera.getCameraTallyColor(); // expect null if failure
     broadcastToAllClients({ type: "updateClientTallyLightIndicator", color: res});
     return res;
 }
@@ -653,8 +647,11 @@ async function refreshCameraAllStates() {
     await refreshCameraFocusZone();
     await refreshCameraFocusMode();
     await refreshCameraTallyColor();
+    // above 3 are the minimum expectations
+
     // TODO how to return failure?
-    // TODO shall we do away with this, and call individually?
+
+
     // TODO how to use as a test for camera responsiveness?
 
     // this.callAPI(j_camera_get_output_info, GET_INFO);

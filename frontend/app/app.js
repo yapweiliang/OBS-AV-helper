@@ -81,12 +81,18 @@ const FOCUS_ZONES = [
     { id: 6, label: 'point (do not use)' }
 ];
 
+// hold-button class already declared in html
 const eid_selFocusZoneSelect = document.getElementById('selFocusZoneSelect');
 const eid_btnToggleAutoFocus = document.getElementById('btnToggleAutoFocus');
 const eid_btnOnePushFocus    = document.getElementById('btnOnePushFocus');
+
+// not-yet declared as hold-button in html
+const eid_reloadCameraStates = document.getElementById('reloadCameraStates');
 const eid_infoBtn            = document.getElementById('infoButton');
 const eid_helpBtn            = document.getElementById('helpButton');
 const eid_codeBtn            = document.getElementById('codeButton');
+
+// normal button, separate listener
 const eid_fullBtn            = document.getElementById('fullScreenButton');
 
 // tags for message handling
@@ -129,6 +135,7 @@ async function initialise() {
     renderUI(); // includes obs scene buttons, x32 buttons
 
     // configure other buttons
+    makeHoldButton(eid_reloadCameraStates, "reloadCameraStates")
     makeHoldButton(eid_infoBtn, "getCameraSettings");
     makeHoldButton(eid_codeBtn, "showCode");
     makeHoldButton(eid_helpBtn, "showHelp");
@@ -282,16 +289,10 @@ function onSocketMessage(event) {
             updateCameraUIStatus();
             break;
         case "updateClientFocusState":
-            if (msg.focus_zone) {
-console.log("updateClientFocusState received focus_zone", msg.focus_zone);
-                cameraFocusZoneId = msg.focus_zone;
-console.log("updateClientFocusState received focus_zone", msg.focus_zone, cameraFocusZoneId);
-            }
-            if (msg.focus_mode) {
-console.log("updateClientFocusState received focus_mode", msg.focus_mode);
-                cameraFocusMode = msg.focus_mode;
-                cameraFocusLocked = msg.focus_locked;
-            }
+            // send null as well (stale)
+            cameraFocusZoneId = msg.focus_zone;
+            cameraFocusMode = msg.focus_mode;
+            cameraFocusLocked = msg.focus_locked;
             updateCameraUIStatus();
             break;
 
@@ -599,14 +600,6 @@ function updateX32ControlsStatus() {
     updateX32Faders();
 }
 
-// function updateAllUI() {  // TODO this is not called?
-//     // controls, not connection
-//
-//     updateX32ControlsStatus(); // buttons, indicators, faders
-//     updateCameraUIStatus(); // tally light
-//     updateOBSUIStatus(); // streaming / recording
-// }
-
 function flashStatusTextTimeout() {
     flashStatusTextTimeoutID = null;
     flashStatusText(nothingToFlash, 0); // on timeout, print a default/idle text
@@ -862,7 +855,7 @@ function highlightCameraPreset(preset_id) {
 
 function updateCameraUIStatus() {
     // tally colour = camera state
-    // tally text = obs state
+    // tally text = obs state (updated separately)
 
     eid_tallyTextArea.style.backgroundColor = serverConnected ? cameraTallyLightColor : "black";
 
@@ -873,6 +866,7 @@ function updateCameraUIStatus() {
         eid_selFocusZoneSelect.classList.remove('stale');
     }
 
+    // let's keep this logic in app.js rather than server.js
     eid_btnToggleAutoFocus.classList.remove("button--highlighted");
     eid_btnOnePushFocus.classList.remove("button--highlighted");
     if (cameraFocusMode == "OP") {
@@ -882,11 +876,9 @@ function updateCameraUIStatus() {
         eid_btnToggleAutoFocus.classList.add("button--highlighted");
         eid_btnToggleAutoFocus.innerHTML = `Focus:<br>${cameraFocusLocked ? "Locked" : "Auto"}`
     } else {
-        eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus"; // un-highlighted
+        eid_btnToggleAutoFocus.innerHTML = "Auto<br>Focus";
+        // un-highlighted, if stale, or, manual focus
     }
-
-    // TODO do we update the presetsTable here too?
-    // TODO can this logic move to server.js and camera.js?
 }
 
 // ----------------------------------------------------
@@ -1013,6 +1005,7 @@ async function runHoldAction(actionName, button) {
         'toggleParentsOverlay',
         'toggleCustomOverlay',
         'toggleStreamStartStop',
+        'reloadCameraStates',
         'toggleAutoFocus',
         'onePushFocus',
         'onePushWhiteBalance',
