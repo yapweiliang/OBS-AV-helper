@@ -92,7 +92,7 @@ const eid_infoBtn            = document.getElementById('infoButton');
 const eid_helpBtn            = document.getElementById('helpButton');
 const eid_codeBtn            = document.getElementById('codeButton');
 
-// normal button, separate listener
+// normal button, separate listener; not disabled when disconnected from server
 const eid_fullBtn            = document.getElementById('fullScreenButton');
 
 // tags for message handling
