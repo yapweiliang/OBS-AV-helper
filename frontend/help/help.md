@@ -88,11 +88,12 @@ Contents:
     - (and omitted from scenes that should not have live sound)
 
 * `SCENE_EXECUTE_COMMAND` scene
+    - **NOT CURRENTLY USED**
     - for selecting audio scenes from X32
         - `>>> lectern speech <<<`
         - `>>> band speech <<<`
         - `>>> band sing <<<`
-    - TODO: enable/disable via the AV Helper server, as an overall 'auto' or 'manual' setting
+    - POSSIBLE TODO FOR PROJECT: enable/disable via the AV Helper server, as an overall 'auto' or 'manual' setting
 
 
 
