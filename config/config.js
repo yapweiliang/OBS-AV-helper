@@ -112,6 +112,7 @@ config.ui = {   // this is exposed to the app.js module, and also applicable to 
     ],
 
     obsScenes: [
+        // sceneName spellings must match the scene names in OBS
         { id: "btnOBS_01", sceneName: "2 BAND: lead",             label: "BAND: lead" },
         { id: "btnOBS_02", sceneName: "3 BAND: right + words",    label: "BAND: right + words" },
         { id: "btnOBS_03", sceneName: "1 BAND: full + words",     label: "BAND: full + words" },

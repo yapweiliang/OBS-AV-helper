@@ -1,5 +1,9 @@
 # Wei Liang's AV Helper
 
+Contents:
+1. Tips for the AV People
+2. OBS configuration
+
 ## Tips for the AV People
 
 ### ON ARRIVAL (09:00)
@@ -59,6 +63,36 @@
 * shutdown the stage equipment
 * tidy stage
 
+## OBS Configuration
+
+### OBS Websocket
+
+* enable + ensure matching port and password
+
+### OBS Custom Browser Dock
+
+* Use http://localhost:3000/obs-dock as OBS Custom Browser Dock
+
+### OBS Scenes
+
+* `---OVERLAY---` scene
+    - to be placed at the top of every visual scene
+    - contains the following sources (as `text source` or `group`) to use as overlays
+        - `parents_overlay` - add spaces before/after to pad the left/right border
+        - `custom_overlay`
+    - the AV Helper server will hide/unhide these sources as needed
+
+* `===AUDIO===` scene
+    - for the live sound source (X32)
+    - to be placed in every scene that broadcasts sound
+    - (and omitted from scenes that should not have live sound)
+
+* `SCENE_EXECUTE_COMMAND` scene
+    - for selecting audio scenes from X32
+        - `>>> lectern speech <<<`
+        - `>>> band speech <<<`
+        - `>>> band sing <<<`
+    - TODO: enable/disable via the AV Helper server, as an overall 'auto' or 'manual' setting
 
 
 
