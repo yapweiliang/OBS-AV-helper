@@ -409,7 +409,7 @@ obs.on("obsConnectSuccess", async state =>  {
     if (state) {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
-        doWakeupCamera();
+        doWakeupCamera(); // TODO should we await this?
         // TODO validate scenes/sources
         //  - check that these actually exist and enable/disable buttons?
         //  - and/or message to clients???
@@ -445,7 +445,7 @@ obs.on("exitStarted", async () => {
     // trying to hide overlays here does not work, need to allow overlayCache method to hide it on start-up
 
     const e = await camera.shutdownCamera();
-    console.log(debugPrefix(), `Camera shutdown when OBS exitStarted ${(e) ? "OK" : "failed"}`);
+    console.log(debugPrefix(), `Camera shutdown when OBS "exitStarted" ${(e) ? "OK" : "failed"}`);
 });
 
 function highlightCameraPreset(preset_id) {
