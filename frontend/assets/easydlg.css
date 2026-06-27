@@ -114,7 +114,9 @@
     overflow-y:auto; /* add vertical scrollbar if needed */
     border:none;
     border-width:0; /* must have a pixel value, used for calcs */
-    /*border:1px solid #ff0000; /* DEBUG */
+    /* border:1px solid #ff0000; /* DEBUG */
+    min-height: 5em;
+    max-height: 15em;
 }
 
 /* First DIV and P elements inside message container */

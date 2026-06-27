@@ -153,8 +153,8 @@ button:disabled {
 }
 
 .focus-zone-select {
-    width: 9em;
-    min-height: 4ch;
+    width: 15ch;
+    min-height: 2.5em;
 }
 
 .focus-zone-select.stale {
