@@ -623,7 +623,7 @@ function updateX32ControlsStatus() {
 
 function persistingStatusMessage() {
     if ((obsScenesReport) && obsScenesReport.length > 0) {
-        return `One or more scene names in config.js are not found in OBS.  Please check logs and config.js.<br>Restart Node server if changes are made to config.js`;
+        return `One or more scene names in config.js are not found in OBS.  Please check logs and config.js.  Restart Node server if changes are made to config.js`;
     } else if (!obsConnectSuccess) {
         return obsConnectReport;
     } else {
