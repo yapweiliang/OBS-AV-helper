@@ -230,11 +230,13 @@ async function onConnection(ws, req) {
     ws.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: activePreset }));
 
     // send obs state
-    ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess }));
+    ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport }));
     ws.send(JSON.stringify({ type: "updateOBSLiveStatus", recordState: obs.b_recordState, streamState: obs.b_streamState }));
     if (obs.obsConnectSuccess) {
         ws.send(JSON.stringify({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene()  }));
     }
+    const greeting = CONFIG.ui.greetingMessage ?? "greeting message was not defined in config.js";
+    broadcastStatusTextToClient(ws, greeting);
     resetOverlayButtons();
 
     // declare message handler
@@ -379,7 +381,10 @@ async function wsMessageHandler(data, ws) {
 const x32 = new X32(CONFIG.x32);
 x32.connect();
 
-const obs = new OBS(CONFIG.obs);
+const sceneNames = CONFIG.ui.obsScenes
+    .filter(scene => scene.sceneName)
+    .map(scene => scene.sceneName);
+const obs = new OBS(CONFIG.obs, sceneNames);
 obs.connect();
 
 const camera = new CAMERA(CONFIG.camera);
@@ -407,14 +412,14 @@ x32.on("heartbeatsMissed", state => {
 
 obs.on("obsConnectSuccess", async state =>  {
     if (state) {
-        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera(); // TODO should we await this?
         // TODO validate scenes/sources
         //  - check that these actually exist and enable/disable buttons?
         //  - and/or message to clients???
     } else {
-        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess });
+        broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: "" });
         broadcastStatusTextToAllClients("Disconnected from OBS", 0);
         resetOverlayButtons();

@@ -27,7 +27,9 @@ let cameraFocusLocked = null;
 let serverConnected = false; // can this go to STATE or should that be X32_STATE?
 let reconnectTimer = null;
 let x32HeartbeatsMissedCounter = 0;  // number of poll cycles it has been silent
-let obsConnectSuccess = null; // disconnected, connected,
+let obsConnectSuccess = null;   // disconnected, connected
+let obsConnectReport = null;    // summary regarding connection status (particularly authentication failed)
+let obsScenesReport = null;     // array of mismatching scene names, or [], or null
 let obsRecordState = true; // live (streaming, recordning)
 let obsStreamState = true;
 let obsActiveScene = null;
@@ -304,6 +306,8 @@ function onSocketMessage(event) {
             break;
         case "updateOBSConnectionStatus":
             obsConnectSuccess = msg.state;
+            obsConnectReport = msg.connectReport;
+            obsScenesReport = msg.scenesReport;
             updateOBSConnectionStatus();
             console.log('obsconnectsuccess', obsConnectSuccess)
             enableOBSActionButtons(obsConnectSuccess);
@@ -371,6 +375,7 @@ function updateServerConnectionStatus() {
     const el = document.getElementById( "serverStatus" );
     if (!el) return;
     el.textContent = serverConnected ? GREEN_DOT : RED_DOT
+    el.title = serverConnected ? "Node server connected" : "Node server not connected"
 }
 
 function updateX32ConnectionStatus() {
@@ -378,14 +383,18 @@ function updateX32ConnectionStatus() {
     if (!el) return;
     if (!serverConnected) {
         el.textContent = WHITE_DOT;
+        el.title = "Node server not connected"
         return;
     }
     if (x32HeartbeatsMissedCounter==0) {
         el.textContent = GREEN_DOT
+        el.title = "X32 OK"
     } else if (x32HeartbeatsMissedCounter <3) {
-         el.textContent = AMBER_DOT
+        el.textContent = AMBER_DOT
+        el.title = "X32 may be disconnected"
     } else {
         el.textContent = RED_DOT
+        el.title = "X32 not connected"
     }
 }
 
@@ -394,9 +403,21 @@ function updateOBSConnectionStatus() {
     if (!el) return;
         if (!serverConnected) {
         el.textContent = WHITE_DOT;
+        el.title = "Node server not connected"
         return;
     }
-    el.textContent = obsConnectSuccess ? GREEN_DOT : RED_DOT
+    if (obsConnectSuccess) {
+        if ((obsScenesReport) && obsScenesReport.length > 0) {
+            el.textContent = AMBER_DOT;
+            el.title = `${obsConnectReport}\nThe following ${obsScenesReport.length} scene names in config.js are not found in OBS.  Please check logs and config.js.\nRestart Node server if changes are made to config.js\n${JSON.stringify(obsScenesReport)}`
+        } else {
+            el.textContent = GREEN_DOT;
+            el.title = `${obsConnectReport}`
+        }
+    } else {
+        el.textContent = RED_DOT;
+        el.title = `${obsConnectReport}`
+    }
 }
 
 // ----------------------------------------------------
@@ -600,9 +621,19 @@ function updateX32ControlsStatus() {
     updateX32Faders();
 }
 
+function persistingStatusMessage() {
+    if ((obsScenesReport) && obsScenesReport.length > 0) {
+        return `One or more scene names in config.js are not found in OBS.  Please check logs and config.js.<br>Restart Node server if changes are made to config.js`;
+    } else if (!obsConnectSuccess) {
+        return obsConnectReport;
+    } else {
+        return nothingToFlash;
+    }
+}
+
 function flashStatusTextTimeout() {
     flashStatusTextTimeoutID = null;
-    flashStatusText(nothingToFlash, 0); // on timeout, print a default/idle text
+    flashStatusText(persistingStatusMessage(), 0); // on timeout, print a default/idle text
 }
 
 function flashStatusText(text, durationMs = defaultFlashTimeoutDurationMs) {

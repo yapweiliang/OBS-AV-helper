@@ -67,6 +67,7 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
 config.ui = {   // this is exposed to the app.js module, and also applicable to server.js
     isDevelopment: isDev,
     versionString: `${name} v${version}`,
+    greetingMessage: "Hello :-)",
 
     urlToShow:   `${config.server.SERVER_ALIAS}:${config.server.LISTEN_PORT}`,
     urlHelpPage: `${config.server.SERVER_ALIAS}:${config.server.LISTEN_PORT}/help/help.html`,
