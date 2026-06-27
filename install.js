@@ -253,7 +253,8 @@ async function downloadFile(url, dest) {
     });
 
     // NPM INSTALL
-    await stepOrAbort(`Install node dependancies\n(Please don't worry about the vulnerability warnings)\nRun "npm ci" in ${INSTALL_DIR}`, async () => {
+    console.log('Please allow npm ci for any significant upgrades')
+    await stepOrSkip(`Install node dependancies\n(Please don't worry about the vulnerability warnings)\nRun "npm ci" in ${INSTALL_DIR}`, async () => {
         run("npm ci", { cwd: INSTALL_DIR });
     });
 
