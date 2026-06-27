@@ -676,7 +676,7 @@ async function doRebootCamera() {
             msg = `${msg}.`;
             broadcastStatusTextToAllClients(msg, 0);
             await sleep(1000);
-            const cameraResponse = await isCameraResponding();
+            const cameraResponse = await camera.isCameraResponding();
             if (cameraResponse) {
                 await refreshCameraAllStates();
                 broadcastStatusTextToAllClients("Camera on.  Please wait for image.");
