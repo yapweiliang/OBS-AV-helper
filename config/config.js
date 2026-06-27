@@ -17,7 +17,7 @@ config.obs = {  // this is passed to the obs.js module on initialisation
 
     PTZ_ACTION_DEVICE_ID: isDev ? 1 : 3,                // this refers to the PTZ Controls plugin in OBS
 
-    OVERLAY_SCENENAME: "---OVERLAY---",                 // this must match the overlay scene name
+    OVERLAY_SCENENAME: "---OVERLAY---",                 // this must match the overlay scene name in OBS
     PARENTS_OVERLAY_SOURCENAME: "parents_overlay",      // this must match the source name in the overlay scene
     CUSTOM_OVERLAY_SOURCENAME: "custom_overlay",        // this must match the source name in the overlay scene
     // see also the scene/overlay buttons in config.ui below
