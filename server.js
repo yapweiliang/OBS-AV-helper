@@ -415,9 +415,6 @@ obs.on("obsConnectSuccess", async state =>  {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
         doWakeupCamera(); // TODO should we await this?
-        // TODO validate scenes/sources
-        //  - check that these actually exist and enable/disable buttons?
-        //  - and/or message to clients???
     } else {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: "" });
@@ -679,8 +676,9 @@ async function doRebootCamera() {
             msg = `${msg}.`;
             broadcastStatusTextToAllClients(msg, 0);
             await sleep(1000);
-            const cameraResponse = await refreshCameraAllStates(); // TODO use different function to test
+            const cameraResponse = await isCameraResponding();
             if (cameraResponse) {
+                await refreshCameraAllStates();
                 broadcastStatusTextToAllClients("Camera on.  Please wait for image.");
                 break;
             };
