@@ -291,10 +291,11 @@ function onSocketMessage(event) {
             updateCameraUIStatus();
             break;
         case "updateClientFocusState":
-            // send null as well (stale)
-            cameraFocusZoneId = msg.focus_zone;
-            cameraFocusMode = msg.focus_mode;
-            cameraFocusLocked = msg.focus_locked;
+            // null is a valid value (stale)
+            // undefined means do not change
+            if (msg.focus_zone   !== undefined) cameraFocusZoneId = msg.focus_zone;
+            if (msg.focus_mode   !== undefined) cameraFocusMode   = msg.focus_mode;
+            if (msg.focus_locked !== undefined) cameraFocusLocked = msg.focus_locked;
             updateCameraUIStatus();
             break;
 
