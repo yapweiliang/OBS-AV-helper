@@ -808,7 +808,7 @@ function updateX32Faders() {
         const f = X32_STATE[fdr.signalId]
         if (f == null) {
             el.querySelector(".label").textContent = '?';
-            return;
+            continue;
         }
         if (f >= 0.5) { value = (f * 40) - 30 }
         else if (f >= 0.25) { value = (f * 80) - 50 }
