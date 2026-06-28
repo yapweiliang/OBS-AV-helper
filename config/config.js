@@ -5,7 +5,7 @@ const config = {};
 
 config.server = {
     LISTEN_PORT: 3000,
-    SERVER_ALIAS: isDev ? `http://localhost` : `http://pc-obs.av`
+    SERVER_ALIAS: `http://${process.env.COMPUTERNAME}`
 }
 
 config.obs = {  // this is passed to the obs.js module on initialisation
