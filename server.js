@@ -414,7 +414,7 @@ obs.on("obsConnectSuccess", async state =>  {
     if (state) {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene() });
-        doWakeupCamera(); // TODO should we await this?
+        doWakeupCamera(); // if camera is on standby, this will wait for short while before refresh refreshCameraAllStates
     } else {
         broadcastToAllClients({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport });
         broadcastToAllClients({ type: "highlightOBSScene", sceneName: "" });
@@ -695,13 +695,19 @@ async function doRebootCamera() {
 };
 
 async function doWakeupCamera() {
-    broadcastStatusTextToAllClients("Sending power_on instruction to camera.", 0);
-    const e = await camera.wakeUpCamera();
+    // called on obsConnectSuccess
+
+    broadcastStatusTextToAllClients("Sending power_on (wake up) instruction to camera.", 0);
+    const e = await camera.wakeUpCamera(); // TODO check if TIMEOUT is sufficient
     if (e) {
-        broadcastStatusTextToAllClients("Camera power_on OK.");
+        broadcastStatusTextToAllClients("Camera power_on (wake up) OK.");
     } else {
         broadcastStatusTextToAllClients("Camera unresponsive.  Try restarting it.", 0);
     };
+    await sleep(7000);
+    // wait for camera to wake up, then refreshCameraAllStates
+    // takes about 5 seconds from standby, let's use 7
+    await refreshCameraAllStates();
     return e;
 };
 
