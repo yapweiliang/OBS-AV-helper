@@ -698,7 +698,7 @@ async function doWakeupCamera() {
     // called on obsConnectSuccess
 
     broadcastStatusTextToAllClients("Sending power_on (wake up) instruction to camera.", 0);
-    const e = await camera.wakeUpCamera(); // TODO check if TIMEOUT is sufficient
+    const e = await camera.wakeUpCamera();
     if (e) {
         broadcastStatusTextToAllClients("Camera power_on (wake up) OK.");
     } else {
@@ -720,15 +720,17 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 async function shutdown(signal) {
-    let e;
+    // shutdown happens on server restart (e.g. updates) or windows shutdown
+
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(debugPrefix(), `${signal} received. ------------------------------\n`);
 
-    // stuff we want to do on [windows] shutdown
-    e = await camera.shutdownCamera(); // obs exit will also try to shutdown camera
-    console.log(debugPrefix(), `Camera shutdown ${(e) ? "OK" : "failed"}`);
-    resetOverlayButtons(); // this might be irrelevant
+    resetOverlayButtons(); // only relevent for server restarts
+
+    // obs exit will also try to shutdown camera
+    const e = await camera.shutdownCamera();
+    console.log(debugPrefix(), `Camera shutdown from server shutdown ${(e) ? "OK" : "failed"}`);
 
     // other cleanup
     obs.disconnect();
