@@ -10,6 +10,8 @@ config.server = {
 
 config.obs = {  // this is passed to the obs.js module on initialisation
 
+    isDevelopment: isDev,
+
     // `ws://${host}`
     host: isDev ? "localhost" : "localhost",
     port: 4455,
