@@ -13,7 +13,7 @@ config.obs = {  // this is passed to the obs.js module on initialisation
     isDevelopment: isDev,
 
     // `ws://${host}`
-    host: isDev ? "localhost" : "localhost",
+    host: isDev ? "localhost" : "localhost",            // the PC that runs OBS
     port: 4455,
     password: process.env.OBS_PASSWORD,
 
@@ -29,6 +29,7 @@ config.obs = {  // this is passed to the obs.js module on initialisation
 config.camera = {   // this is passed to the camera.js module on initialisation
 
     isDevelopment: isDev,
+
     // `http://${config.CAMERA_IP}`
     CAMERA_IP: isDev ? "ubuntu-server.rarebits:5000" : "192.168.32.107"
 }
@@ -42,7 +43,7 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
     port: 10023,
     localPort: 10024,
 
-    pollIntervalMs: 10000,
+    pollIntervalMs: 10000,          // poll the x32 every 10 seconds
 
     signals: {
 
@@ -67,6 +68,7 @@ config.x32 = {  // this is passed to the x32.js module on initialisation
 }
 
 config.ui = {   // this is exposed to the app.js module, and also applicable to server.js
+
     isDevelopment: isDev,
     versionString: `${name} v${version}`,
     greetingMessage: "Hello :-)",
