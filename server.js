@@ -482,7 +482,7 @@ function formatError600(strSource, isScene = false) {
     if (isScene) {
         return `Error: OBS scene "<b><span style="color: red;">${strSource}</span></b>" is missing or misspelled.`
     } else {
-        return `Error: "<b><span style="color: red;">${strSource}</span></b>" is missing or misspelled in the OBS scene "<b><span style="color: red;">${CONFIG.obs.OVERLAY_SCENENAME}</span></b>".`
+        return `Error: OBS source "<b><span style="color: red;">${strSource}</span></b>" or OBS scene "<b><span style="color: red;">${CONFIG.obs.OVERLAY_SCENENAME}</span></b>" is missing/misspelled in OBS or config.js.`
     }
 }
 

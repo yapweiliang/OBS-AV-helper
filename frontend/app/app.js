@@ -410,7 +410,7 @@ function updateOBSConnectionStatus() {
     if (obsConnectSuccess) {
         if ((obsScenesReport) && obsScenesReport.length > 0) {
             el.textContent = AMBER_DOT;
-            el.title = `${obsConnectReport}\nThe following ${obsScenesReport.length} scene names in config.js are not found in OBS.  Please check logs and config.js.\nRestart Node server if changes are made to config.js\n${JSON.stringify(obsScenesReport)}`
+            el.title = `${obsConnectReport}\nThe following ${obsScenesReport.length} scene/source names in config.js are not found in OBS.  Please check logs and config.js.\nRestart Node server if changes are made to config.js\n${JSON.stringify(obsScenesReport)}`
         } else {
             el.textContent = GREEN_DOT;
             el.title = `${obsConnectReport}`
@@ -624,7 +624,7 @@ function updateX32ControlsStatus() {
 
 function persistingStatusMessage() {
     if ((obsScenesReport) && obsScenesReport.length > 0) {
-        return `One or more scene names in config.js are not found in OBS.  Please check logs and config.js.  Restart Node server if changes are made to config.js`;
+        return `One or more scene/source names in config.js are not found in OBS.  Please check logs and config.js.  Restart Node server if changes are made to config.js`;
     } else if (!obsConnectSuccess) {
         return obsConnectReport;
     } else {
