@@ -602,7 +602,7 @@ function renderOBSButtons() {
             const el = document.createElement("button");
             el.id = btn.id;
             el.textContent = btn.label;
-            el.classList.add('hold-button');
+            el.classList.add('button--medium', 'hold-button');
             el.dataset.action = OBS_TAG + btn.sceneName;
             // el.dataset.holdMs = 0; // not needed as default = 0
 

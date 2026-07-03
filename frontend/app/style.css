@@ -84,6 +84,11 @@ button:disabled {
 }
 */
 
+.button--medium {
+    padding-top: calc( var(--padding) * 1.5);
+    padding-bottom: calc( var(--padding) * 1.5);
+}
+
 .button--big {
     padding-top: calc( var(--padding) * 2);
     padding-bottom: calc( var(--padding) * 2);
