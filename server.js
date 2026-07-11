@@ -221,13 +221,10 @@ wss.on("connection", (ws, req) => onConnection(ws, req));
 
 async function onConnection(ws, req) {
     console.log(debugPrefix(), "Browser connected", new Date());
+
     // send X32 state
     ws.send(JSON.stringify({ type: "x32StateChanged", state: x32.getState() })); // refresh state
     ws.send(JSON.stringify({ type: "x32HeartbeatsMissed", state: x32.getPollCyclesCounter() }));
-
-    // send camera state (this will READ from camera and broadcast to ALL clients)
-    await refreshCameraAllStates();
-    ws.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: activePreset }));
 
     // send obs state
     ws.send(JSON.stringify({ type: "updateOBSConnectionStatus", state: obs.obsConnectSuccess, connectReport: obs.obsConnectReport, scenesReport: obs.obsScenesReport }));
@@ -235,12 +232,19 @@ async function onConnection(ws, req) {
     if (obs.obsConnectSuccess) {
         ws.send(JSON.stringify({ type: "highlightOBSScene", sceneName: await obs.getCurrentProgramScene()  }));
     }
-    const greeting = CONFIG.ui.greetingMessage ?? "greeting message was not defined in config.js";
-    broadcastStatusTextToClient(ws, greeting);
     resetOverlayButtons();
+
+    // send camera state (this will READ from camera and broadcast to ALL clients)
+    // with camera message queuing it may wait for camera power_on to complete
+    await refreshCameraAllStates();
+    ws.send(JSON.stringify({ type: "highlightCameraPreset", preset_id: activePreset }));
 
     // declare message handler
     ws.on("message", data => wsMessageHandler(data, ws));
+
+    // finally, send greeting
+    const greeting = CONFIG.ui.greetingMessage ?? "greeting message was not defined in config.js";
+    broadcastStatusTextToClient(ws, greeting);
 }
 
 // ----------------------------------------------------
@@ -698,15 +702,13 @@ async function doWakeupCamera() {
     // called on obsConnectSuccess
 
     broadcastStatusTextToAllClients("Sending power_on (wake up) instruction to camera.", 0);
-    const e = await camera.wakeUpCamera();
+    console.log(debugPrefix(), 'Sending power_on instruction to camera');
+    const e = await camera.wakeUpCamera(); // this incorporates a 7 second timeout, although probably only 3+ seconds needed
     if (e) {
         broadcastStatusTextToAllClients("Camera power_on (wake up) OK.");
     } else {
         broadcastStatusTextToAllClients("Camera unresponsive.  Try restarting it.", 0);
     };
-    await sleep(7000);
-    // wait for camera to wake up, then refreshCameraAllStates
-    // takes about 5 seconds from standby, let's use 7
     await refreshCameraAllStates();
     return e;
 };
